@@ -1,0 +1,51 @@
+name: Apply dashboard debt details v5
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-dashboard-debt-details-v5.yml'
+      - '.github/patches/dashboard-debt-details-v5.patch'
+      - '.github/patches/current-debt-total-v5.patch'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply dashboard and debt patches
+        shell: bash
+        run: |
+          apply_patch() {
+            local patch_file="$1"
+            if git apply --check "$patch_file"; then
+              git apply "$patch_file"
+            elif git apply --reverse --check "$patch_file"; then
+              echo "$patch_file is already applied."
+            else
+              echo "$patch_file does not apply cleanly." >&2
+              exit 1
+            fi
+          }
+          apply_patch .github/patches/dashboard-debt-details-v5.patch
+          apply_patch .github/patches/current-debt-total-v5.patch
+
+      - name: Commit updated app
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Add debt detail views and recurring minimum payments'
+          git push origin HEAD:main
