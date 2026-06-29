@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/apply-v8-savings-investments.yml'
       - 'scripts/apply_v8_savings_investments.py'
+      - 'scripts/apply_v8_1_savings_refinements.py'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Correct migration match and apply v8
+      - name: Apply savings migrations
         shell: bash
         run: |
           python - <<'PY'
@@ -30,6 +31,7 @@ jobs:
           p.write_text(s)
           PY
           python scripts/apply_v8_savings_investments.py
+          python scripts/apply_v8_1_savings_refinements.py
 
       - name: Validate application JavaScript and feature markers
         shell: bash
@@ -43,13 +45,13 @@ jobs:
           if not inline:
               raise SystemExit('No inline JavaScript found')
           Path('/tmp/financial-planner-v8.js').write_text(inline[-1],encoding='utf-8')
-          required=['savingsForm','savingsMonthlyTarget','buildSavingsProjection','buildInvestmentProjection','chartModeToggle','copy-income','financial-planner-secure-v8-savings-investments']
-          missing=[item for item in required if item not in html and item not in Path('service-worker.js').read_text()]
+          required=['savingsForm','savingsMonthlyTarget','buildSavingsProjection','buildInvestmentProjection','chartModeToggle','copy-income']
+          missing=[item for item in required if item not in html]
           if missing:
               raise SystemExit(f'Missing v8 markers: {missing}')
           PY
           node --check /tmp/financial-planner-v8.js
-          grep -q "financial-planner-secure-v8-savings-investments" service-worker.js
+          grep -q "financial-planner-secure-v8-1-savings-refinements" service-worker.js
 
       - name: Commit updated application
         shell: bash
@@ -61,5 +63,5 @@ jobs:
             echo 'No app changes were needed.'
             exit 0
           fi
-          git commit -m 'Add smart savings, investment growth, and income copy'
+          git commit -m 'Refine savings growth and copied income dates'
           git push origin HEAD:main
