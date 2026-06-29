@@ -6,6 +6,8 @@ on:
       - '.github/workflows/apply-v8-savings-investments.yml'
       - 'scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64'
       - 'scripts/apply_v10_monthly_allocation_pie.py.xz.b64'
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
@@ -13,6 +15,7 @@ permissions:
 
 jobs:
   migrate:
+    if: github.event_name != 'issues' || github.event.issue.title == 'Run financial planner visualization migration'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
