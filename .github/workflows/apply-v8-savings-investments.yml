@@ -1,11 +1,10 @@
-name: Apply v8 savings and investments
+name: Apply dynamic savings and chart improvements
 
 on:
   push:
     paths:
       - '.github/workflows/apply-v8-savings-investments.yml'
-      - 'scripts/apply_v8_savings_investments.py'
-      - 'scripts/apply_v8_1_savings_refinements.py'
+      - 'scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64'
   workflow_dispatch:
 
 permissions:
@@ -20,18 +19,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply savings migrations
+      - name: Decode and apply v9 migration
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path('scripts/apply_v8_savings_investments.py')
-          s=p.read_text()
-          s=s.replace("...summary.map(e=>({date:e.date,balance:e.runningBalance}))", "...events.map(e=>({date:e.date,balance:e.runningBalance}))")
-          p.write_text(s)
+          import base64, lzma
+          payload = Path('scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64').read_text().strip()
+          script = lzma.decompress(base64.b64decode(payload))
+          Path('/tmp/apply_v9_dynamic_cash_and_chart.py').write_bytes(script)
           PY
-          python scripts/apply_v8_savings_investments.py
-          python scripts/apply_v8_1_savings_refinements.py
+          python -m py_compile /tmp/apply_v9_dynamic_cash_and_chart.py
+          python /tmp/apply_v9_dynamic_cash_and_chart.py
 
       - name: Validate application JavaScript and feature markers
         shell: bash
@@ -39,19 +38,27 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-          html=Path('index.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',html,flags=re.S|re.I)
-          inline=[s for s in scripts if s.strip()]
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
           if not inline:
               raise SystemExit('No inline JavaScript found')
-          Path('/tmp/financial-planner-v8.js').write_text(inline[-1],encoding='utf-8')
-          required=['savingsForm','savingsMonthlyTarget','buildSavingsProjection','buildInvestmentProjection','chartModeToggle','copy-income']
-          missing=[item for item in required if item not in html]
+          Path('/tmp/financial-planner-v9.js').write_text(inline[-1], encoding='utf-8')
+          required = [
+              'savingsCashCeiling', 'savingsSweepExcess', 'Excess cash sweep to investments',
+              'monthlySpendingRoomPanel', 'buildMonthlySpendingRoom', 'chartTooltip',
+              'resetChartZoom', 'setupChartInteractions', 'niceMoneyStep'
+          ]
+          missing = [item for item in required if item not in html]
           if missing:
-              raise SystemExit(f'Missing v8 markers: {missing}')
+              raise SystemExit(f'Missing v9 markers: {missing}')
+          ids = re.findall(r'\bid="([^"]+)"', html)
+          duplicates = sorted({item for item in ids if ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate HTML ids: {duplicates}')
           PY
-          node --check /tmp/financial-planner-v8.js
-          grep -q "financial-planner-secure-v8-1-savings-refinements" service-worker.js
+          node --check /tmp/financial-planner-v9.js
+          grep -q "financial-planner-secure-v9-dynamic-cash-and-chart" service-worker.js
 
       - name: Commit updated application
         shell: bash
@@ -63,5 +70,5 @@ jobs:
             echo 'No app changes were needed.'
             exit 0
           fi
-          git commit -m 'Refine savings growth and copied income dates'
+          git commit -m 'Add dynamic cash sweeps, monthly spending room, and chart zoom'
           git push origin HEAD:main
