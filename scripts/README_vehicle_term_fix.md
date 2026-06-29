@@ -1,0 +1,1 @@
+The vehicle-loan schedule is limited to the exact number of installments selected in the Vehicle scenario. A 48-month term generates 48 monthly loan payments, counted from the configured first-payment date.
