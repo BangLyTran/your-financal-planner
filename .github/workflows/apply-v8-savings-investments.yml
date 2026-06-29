@@ -1,10 +1,11 @@
-name: Apply dynamic savings and chart improvements
+name: Apply dynamic savings and visualizations
 
 on:
   push:
     paths:
       - '.github/workflows/apply-v8-savings-investments.yml'
       - 'scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64'
+      - 'scripts/apply_v10_monthly_allocation_pie.py.xz.b64'
   workflow_dispatch:
 
 permissions:
@@ -19,18 +20,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Decode and apply v9 migration
+      - name: Decode migration payloads
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import base64, lzma
-          payload = Path('scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64').read_text().strip()
-          script = lzma.decompress(base64.b64decode(payload))
-          Path('/tmp/apply_v9_dynamic_cash_and_chart.py').write_bytes(script)
+          payloads = [
+              ('scripts/apply_v9_dynamic_cash_and_chart.py.xz.b64', '/tmp/apply_v9_dynamic_cash_and_chart.py'),
+              ('scripts/apply_v10_monthly_allocation_pie.py.xz.b64', '/tmp/apply_v10_monthly_allocation_pie.py'),
+          ]
+          for source, target in payloads:
+              encoded = Path(source).read_text().strip()
+              script = lzma.decompress(base64.b64decode(encoded))
+              Path(target).write_bytes(script)
+              print(f'Decoded {source} -> {target} ({len(script)} bytes)')
           PY
-          python -m py_compile /tmp/apply_v9_dynamic_cash_and_chart.py
+          python -m py_compile /tmp/apply_v9_dynamic_cash_and_chart.py /tmp/apply_v10_monthly_allocation_pie.py
+
+      - name: Apply dynamic savings and chart migrations
+        shell: bash
+        run: |
           python /tmp/apply_v9_dynamic_cash_and_chart.py
+          python /tmp/apply_v10_monthly_allocation_pie.py
 
       - name: Validate application JavaScript and feature markers
         shell: bash
@@ -43,22 +55,24 @@ jobs:
           inline = [s for s in scripts if s.strip()]
           if not inline:
               raise SystemExit('No inline JavaScript found')
-          Path('/tmp/financial-planner-v9.js').write_text(inline[-1], encoding='utf-8')
+          Path('/tmp/financial-planner-v10.js').write_text(inline[-1], encoding='utf-8')
           required = [
               'savingsCashCeiling', 'savingsSweepExcess', 'Excess cash sweep to investments',
               'monthlySpendingRoomPanel', 'buildMonthlySpendingRoom', 'chartTooltip',
-              'resetChartZoom', 'setupChartInteractions', 'niceMoneyStep'
+              'resetChartZoom', 'setupChartInteractions', 'niceMoneyStep',
+              'monthlyAllocationChart', 'monthlyAllocationLegend',
+              'drawMonthlyAllocationChart', 'setupMonthlyAllocationInteractions'
           ]
           missing = [item for item in required if item not in html]
           if missing:
-              raise SystemExit(f'Missing v9 markers: {missing}')
+              raise SystemExit(f'Missing visualization markers: {missing}')
           ids = re.findall(r'\bid="([^"]+)"', html)
           duplicates = sorted({item for item in ids if ids.count(item) > 1})
           if duplicates:
               raise SystemExit(f'Duplicate HTML ids: {duplicates}')
           PY
-          node --check /tmp/financial-planner-v9.js
-          grep -q "financial-planner-secure-v9-dynamic-cash-and-chart" service-worker.js
+          node --check /tmp/financial-planner-v10.js
+          grep -q "financial-planner-secure-v10-monthly-allocation-pie" service-worker.js
 
       - name: Commit updated application
         shell: bash
@@ -70,5 +84,5 @@ jobs:
             echo 'No app changes were needed.'
             exit 0
           fi
-          git commit -m 'Add dynamic cash sweeps, monthly spending room, and chart zoom'
+          git commit -m 'Add dynamic cash sweeps, spending room, zoom charts, and monthly allocation pie'
           git push origin HEAD:main
