@@ -1,0 +1,27 @@
+--- a/index.html
++++ b/index.html
+@@ -208,6 +208,13 @@
+     .debt-detail-line span:first-child { color:var(--muted); }
+     .paid-off-badge { display:inline-flex; margin-top:6px; padding:3px 7px; border-radius:999px; background:#dcfce7; color:#166534; font-size:.72rem; font-weight:800; }
++    .current-debt-total { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; padding:15px 16px; border:1px solid #fed7aa; border-radius:14px; background:linear-gradient(135deg,#fff7ed,#fff); }
++    .current-debt-total-label { color:#9a3412; font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.045em; }
++    .current-debt-total-values { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
++    .current-debt-total-primary { color:var(--warn); font-size:1.55rem; font-weight:850; }
++    .current-debt-total-secondary { color:#475569; font-size:1rem; font-weight:750; }
++    .current-debt-total-note { margin-top:4px; color:var(--muted); font-size:.78rem; }
+ 
+     @media (max-width: 1100px) {
+@@ -422,6 +429,7 @@
+       <div class="panel">
+         <h2>Projected debt balances</h2>
++        <div id="currentDebtTotals" class="current-debt-total"></div>
+         <div id="debtCards" class="grid three"></div>
+         <div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>Debt</th><th>Opening</th><th>APR</th><th>Payments by target</th><th>Interest accrued</th><th>Projected balance</th><th>Actions</th></tr></thead><tbody id="debtTable"></tbody></table></div>
+@@ -1364,6 +1372,9 @@
+   }
+   function renderDebts() {
+     const projections=state.debts.map(d=>({d,p:projectDebt(d)}));
++    const currentUSD=state.debts.reduce((sum,d)=>sum+toUSD(Number(d.balance)||0,d.currency),0);
++    const currentCAD=fromUSD(currentUSD,'CAD');
++    document.getElementById('currentDebtTotals').innerHTML=`<div><div class="current-debt-total-label">Total current debt</div><div class="current-debt-total-note">Sum of the balances entered below, before forecast interest and future payments.</div></div><div class="current-debt-total-values"><span class="current-debt-total-primary">${money2(currentUSD,'USD')}</span><span class="current-debt-total-secondary">${money2(currentCAD,'CAD')}</span></div>`;
+     document.getElementById('debtCards').innerHTML=projections.map(({d,p})=>{const opening=toUSD(d.balance,d.currency);const pct=opening?Math.min(100,p.balanceUSD/opening*100):0;return `<div class="card"><div class="label">${escapeHtml(d.name)}</div><div class="value ${d.apr>=20?'warning':''}">${money(p.balanceUSD)}</div><div class="detail">${d.apr}% APR · ${money(p.paymentsUSD)} paid</div><div class="debt-bar"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div></div>`}).join('');
