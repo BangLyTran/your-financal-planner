@@ -266,12 +266,62 @@
     .historical-reference { margin-top:12px; padding:12px 14px; border-radius:12px; background:#f8fafc; border:1px solid var(--line); color:#475569; font-size:.8rem; line-height:1.5; }
     .investment-value { color:#0369a1; }
     .shortfall-value { color:#b45309; }
+    .chart-tools { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+    .chart-shell { position:relative; width:100%; min-height:390px; user-select:none; }
+    #cashChart { height:390px; touch-action:none; cursor:crosshair; }
+    .chart-tooltip { position:absolute; z-index:6; min-width:220px; max-width:290px; pointer-events:none; opacity:0; transform:translate(-50%,-108%); transition:opacity .12s ease; padding:11px 12px; border-radius:12px; background:rgba(15,23,42,.95); color:#fff; box-shadow:0 12px 30px rgba(15,23,42,.24); font-size:.78rem; line-height:1.45; }
+    .chart-tooltip.show { opacity:1; }
+    .chart-tooltip-title { font-weight:850; margin-bottom:6px; }
+    .chart-tooltip-row { display:flex; justify-content:space-between; gap:14px; }
+    .chart-tooltip-row span:first-child { color:#cbd5e1; }
+    .chart-range-label { color:#475569; font-size:.78rem; font-weight:750; margin:-4px 0 8px; }
+    .chart-help { color:var(--muted); font-size:.76rem; margin-top:8px; line-height:1.45; }
+    .monthly-room-panel { border-color:#c7d2fe; background:linear-gradient(135deg,#f8fbff,#fff); }
+    .monthly-room-controls { display:flex; align-items:end; gap:8px; flex-wrap:wrap; }
+    .monthly-room-controls select { min-width:180px; }
+    .monthly-room-strip { display:flex; gap:7px; overflow-x:auto; padding:3px 2px 10px; scrollbar-width:thin; }
+    .monthly-room-chip { border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:10px; padding:8px 10px; min-width:100px; text-align:left; white-space:nowrap; }
+    .monthly-room-chip strong { display:block; margin-top:3px; color:#0f172a; }
+    .monthly-room-chip.active { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; box-shadow:0 5px 14px rgba(37,99,235,.12); }
+    .monthly-room-chip.negative strong { color:#b91c1c; }
+    .monthly-room-hero { display:grid; grid-template-columns:minmax(230px,.8fr) minmax(0,1.6fr); gap:16px; align-items:stretch; margin-top:5px; }
+    .monthly-room-primary { border:1px solid #bfdbfe; border-radius:14px; padding:18px; background:#eff6ff; }
+    .monthly-room-primary .label { color:#1e3a8a; font-size:.78rem; font-weight:850; text-transform:uppercase; letter-spacing:.04em; }
+    .monthly-room-primary .value { margin-top:8px; font-size:clamp(1.7rem,4vw,2.8rem); font-weight:900; }
+    .monthly-room-formula { margin-top:8px; color:#475569; font-size:.82rem; line-height:1.45; }
+    .monthly-room-grid { display:grid; grid-template-columns:repeat(3,minmax(130px,1fr)); gap:10px; }
+    .monthly-room-stat { border:1px solid var(--line); border-radius:12px; background:#fff; padding:13px; }
+    .monthly-room-stat span { display:block; color:var(--muted); font-size:.74rem; font-weight:750; }
+    .monthly-room-stat strong { display:block; margin-top:5px; font-size:1.05rem; }
+    .monthly-room-note { margin-top:12px; color:var(--muted); font-size:.78rem; line-height:1.5; }
+    .monthly-allocation-layout { display:grid; grid-template-columns:minmax(280px,.85fr) minmax(300px,1.15fr); gap:16px; margin-top:16px; }
+    .monthly-allocation-card { border:1px solid var(--line); border-radius:14px; background:#fff; padding:15px; }
+    .monthly-allocation-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .monthly-allocation-head h3 { margin:0 0 3px; }
+    .monthly-allocation-total { color:#0f172a; font-weight:850; white-space:nowrap; }
+    .monthly-allocation-shell { position:relative; min-height:300px; }
+    #monthlyAllocationChart { width:100%; height:300px; display:block; touch-action:none; }
+    .allocation-tooltip { position:absolute; z-index:7; pointer-events:none; opacity:0; transform:translate(-50%,-112%); transition:opacity .12s ease; min-width:175px; padding:10px 11px; border-radius:11px; background:rgba(15,23,42,.96); color:#fff; box-shadow:0 12px 28px rgba(15,23,42,.24); font-size:.78rem; line-height:1.4; }
+    .allocation-tooltip.show { opacity:1; }
+    .allocation-tooltip strong { display:block; font-size:.88rem; margin-bottom:3px; }
+    .allocation-legend { display:grid; align-content:start; gap:7px; }
+    .allocation-legend-row { display:grid; grid-template-columns:auto minmax(130px,1fr) auto auto; align-items:center; gap:9px; width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; text-align:left; color:var(--text); }
+    .allocation-legend-row:hover, .allocation-legend-row.active { border-color:#93c5fd; background:#eff6ff; }
+    .allocation-swatch { width:11px; height:11px; border-radius:3px; }
+    .allocation-label { font-weight:750; }
+    .allocation-amount { font-weight:800; white-space:nowrap; }
+    .allocation-percent { min-width:48px; text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .allocation-empty { display:grid; place-items:center; min-height:270px; color:var(--muted); text-align:center; padding:20px; }
+    .allocation-note { margin-top:9px; color:var(--muted); font-size:.76rem; line-height:1.45; }
 
     @media (max-width: 1100px) {
+      .monthly-allocation-layout { grid-template-columns:1fr; }
       .debt-deadline-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .planner-protection-box { grid-template-columns:1fr; }
       .planner-protection-title, .planner-protection-note { grid-column:1; }
       .debt-breakdown-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .monthly-room-hero { grid-template-columns:1fr; }
+      .monthly-room-grid { grid-template-columns:repeat(2,minmax(130px,1fr)); }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .two, .three { grid-template-columns: 1fr; }
       form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -286,6 +336,14 @@
       #forecastLedger.detail-column-open .debt-detail-header,
       #forecastLedger.detail-column-open .debt-detail-cell { width:230px; max-width:230px; }
       .debt-detail-inner { min-width:205px; }
+      .monthly-room-grid { grid-template-columns:1fr; }
+      .chart-tools { justify-content:flex-start; }
+      .chart-shell { min-height:350px; }
+      #cashChart { height:350px; }
+      .monthly-allocation-shell { min-height:270px; }
+      #monthlyAllocationChart { height:270px; }
+      .allocation-legend-row { grid-template-columns:auto minmax(105px,1fr) auto; }
+      .allocation-percent { grid-column:2 / -1; text-align:left; padding-left:20px; }
       .debt-deadline-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -369,12 +427,20 @@
               <div class="muted small" id="chartModeDetail">Spendable cash plus saved principal, without market growth.</div>
               <div class="chart-legend" id="chartLegend"><span><span class="legend-line"></span>Cash + investment principal</span></div>
             </div>
-            <div class="chart-mode-toggle" id="chartModeToggle" aria-label="Investment chart mode">
-              <button type="button" data-chart-mode="principal">Principal only</button>
-              <button type="button" data-chart-mode="growth">With investment growth</button>
+            <div class="chart-tools">
+              <div class="chart-mode-toggle" id="chartModeToggle" aria-label="Investment chart mode">
+                <button type="button" data-chart-mode="principal">Principal only</button>
+                <button type="button" data-chart-mode="growth">With investment growth</button>
+              </div>
+              <button class="btn sm secondary" type="button" id="resetChartZoom" disabled>Reset zoom</button>
             </div>
           </div>
-          <canvas id="cashChart" width="1000" height="330"></canvas>
+          <div class="chart-range-label" id="chartRangeLabel"></div>
+          <div class="chart-shell" id="chartShell">
+            <canvas id="cashChart" width="1000" height="390" aria-label="Interactive projected cash and investment chart"></canvas>
+            <div class="chart-tooltip" id="chartTooltip" role="status" aria-live="polite"></div>
+          </div>
+          <div class="chart-help">Hover or tap for exact values. Drag between two dates to zoom. Use Ctrl + mouse wheel, a trackpad pinch, or a two-finger pinch to zoom further. Select Reset zoom or press Escape to return to the full forecast.</div>
         </div>
         <div class="panel">
           <h2>Planning snapshot</h2>
@@ -385,6 +451,48 @@
             <div class="small muted" id="vehicleScenarioDetail"></div>
           </div>
         </div>
+      </div>
+
+
+      <div class="panel monthly-room-panel" style="margin-top:16px" id="monthlySpendingRoomPanel">
+        <div class="panel-head">
+          <div>
+            <h2>Monthly spending room</h2>
+            <div class="muted small">See what each month's net income leaves after debt, housing, vehicle costs, other fixed obligations, and savings—but before food and fun spending.</div>
+          </div>
+          <div class="monthly-room-controls">
+            <button class="btn sm secondary" type="button" id="monthlyRoomPrev" aria-label="Previous month">←</button>
+            <div><label for="monthlyRoomSelect">Month</label><select id="monthlyRoomSelect"></select></div>
+            <button class="btn sm secondary" type="button" id="monthlyRoomNext" aria-label="Next month">→</button>
+          </div>
+        </div>
+        <div class="monthly-room-strip" id="monthlyRoomStrip"></div>
+        <div class="monthly-room-hero">
+          <div class="monthly-room-primary">
+            <div class="label">Income left before food & fun</div>
+            <div class="value" id="monthlyRoomAvailable">$0</div>
+            <div class="monthly-room-formula" id="monthlyRoomFormula"></div>
+          </div>
+          <div class="monthly-room-grid" id="monthlyRoomStats"></div>
+        </div>
+        <div class="monthly-allocation-layout">
+          <div class="monthly-allocation-card">
+            <div class="monthly-allocation-head">
+              <div><h3>Where the money goes</h3><div class="muted small" id="monthlyAllocationSubtitle"></div></div>
+              <div class="monthly-allocation-total" id="monthlyAllocationTotal">$0</div>
+            </div>
+            <div class="monthly-allocation-shell" id="monthlyAllocationShell">
+              <canvas id="monthlyAllocationChart" width="520" height="300" aria-label="Interactive monthly cash allocation donut chart"></canvas>
+              <div class="allocation-tooltip" id="monthlyAllocationTooltip" role="status" aria-live="polite"></div>
+            </div>
+            <div class="allocation-note">Percentages are based on money allocated during the selected month. Savings and investments are shown as an asset transfer—not consumption.</div>
+          </div>
+          <div class="monthly-allocation-card">
+            <div class="monthly-allocation-head"><div><h3>Allocation breakdown</h3><div class="muted small">Hover, tap, or select a category to inspect it.</div></div></div>
+            <div class="allocation-legend" id="monthlyAllocationLegend"></div>
+          </div>
+        </div>
+        <div class="monthly-room-note" id="monthlyRoomNote"></div>
       </div>
 
       <div class="panel" style="margin-top:16px">
@@ -471,7 +579,9 @@
             <div><label>Monthly savings / investment target</label><input id="savingsMonthlyTarget" type="number" step="50" min="0" /></div>
             <div><label>Starting investment balance</label><input id="savingsStartingBalance" type="number" step="100" min="0" /></div>
             <div><label>Contribution timing</label><select id="savingsTiming"><option value="eachPaycheck">Split across paychecks in the month</option><option value="firstPaycheck">Try the full target after the first paycheck</option></select></div>
-            <div><label>Minimum spendable-cash floor</label><input id="savingsCashFloor" type="number" step="100" min="0" /></div>
+            <div><label>Hard minimum spendable-cash floor</label><input id="savingsCashFloor" type="number" step="100" min="0" /><div class="muted small">The planner will not invest money needed to stay above this floor after near-term obligations.</div></div>
+            <div><label>Emergency-fund cash ceiling</label><input id="savingsCashCeiling" type="number" step="500" min="0" /><div class="muted small">Once debt-first obligations are handled, cash above this reserve is swept into investments.</div></div>
+            <div><label>Automatic excess-cash sweep</label><div class="check-row"><input id="savingsSweepExcess" type="checkbox" checked /> Invest safe cash above the emergency-fund ceiling</div></div>
             <div><label>Essential-cost safety buffer %</label><input id="savingsEssentialBuffer" type="number" step="1" min="0" max="100" /></div>
             <div><label>Debt-first APR threshold</label><input id="savingsDebtFirstApr" type="number" step="0.5" min="0" /><div class="muted small">Investing is reduced while debt at or above this rate remains.</div></div>
             <div><label>Minimum monthly investment while debt comes first</label><input id="savingsMinimumWhileDebt" type="number" step="25" min="0" /></div>
@@ -497,7 +607,7 @@
 
       <div class="panel" style="margin-top:16px">
         <div class="panel-head"><div><h2>Monthly savings feasibility</h2><div class="muted small">The planner never forces savings that would violate the cash floor or leave insufficient money for scheduled costs before the next paycheck.</div></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Month</th><th>Target</th><th>Contributed</th><th>Shortfall</th><th>Essential costs</th><th>Flexible spending</th><th>Planner response</th></tr></thead><tbody id="savingsMonthlyTable"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Month</th><th>Target</th><th>Target funded</th><th>Excess sweep</th><th>Shortfall</th><th>Essential costs</th><th>Flexible spending</th><th>Planner response</th></tr></thead><tbody id="savingsMonthlyTable"></tbody></table></div>
       </div>
     </section>
 
@@ -716,6 +826,8 @@
       startingBalance: 0,
       timing: 'eachPaycheck',
       cashFloor: 2500,
+      cashCeiling: 20000,
+      sweepExcess: true,
       essentialBufferPct: 10,
       debtFirstApr: 10,
       minimumWhileDebt: 0,
@@ -761,6 +873,20 @@
   let cloudBusy = false;
   let reconcilingCloud = false;
   let debtBreakdownOpen = false;
+  let selectedMonthlyRoomKey = null;
+  const monthlyAllocationView = { segments:[], activeIndex:-1, selected:null };
+  const chartView = {
+    startMs: null,
+    endMs: null,
+    summary: null,
+    render: null,
+    dragging: false,
+    dragPointerId: null,
+    dragStartX: null,
+    dragCurrentX: null,
+    pointers: new Map(),
+    pinch: null
+  };
 
   function normalizeState(parsed) {
     return Object.assign(clone(defaultState), parsed || {}, {
@@ -1315,18 +1441,66 @@
     const paydays=[...new Set(baseEvents.filter(e=>e.source==='income').map(e=>e.date))].sort();
     const firstMonth=paydays.length?monthKey(paydays[0]):monthKey(state.settings.forecastStart);
     const keys=monthKeysBetween(`${firstMonth}-01`,targetDate);
-    const monthMap=new Map(keys.map(key=>[key,{key,target:cfg.enabled?Math.max(0,Number(cfg.monthlyTarget)||0):0,contributed:0,essential:0,flexible:0,reasons:new Set(),paydays:paydays.filter(d=>monthKey(d)===key)}]));
-    baseEvents.filter(e=>e.amountUSD<0).forEach(e=>{const m=monthMap.get(monthKey(e.date));if(!m)return;if(isEssentialForecastEvent(e))m.essential+=Math.abs(e.amountUSD);else if(['Discretionary','Other'].includes(e.type))m.flexible+=Math.abs(e.amountUSD);});
-    const emptyResult={events:[],months:[...monthMap.values()].map(m=>({...m,shortfall:m.target,status:m.target?'No contributions scheduled':'Disabled',reasons:[...m.reasons]})),totalTarget:[...monthMap.values()].reduce((s,m)=>s+m.target,0),totalContributed:0,totalShortfall:[...monthMap.values()].reduce((s,m)=>s+m.target,0),endingPrincipal:Math.max(0,Number(cfg.startingBalance)||0)};
-    if(!cfg.enabled||Number(cfg.monthlyTarget)<=0||!paydays.length)return emptyResult;
+    const monthMap=new Map(keys.map(key=>[key,{
+      key,
+      target:cfg.enabled?Math.max(0,Number(cfg.monthlyTarget)||0):0,
+      contributed:0,
+      swept:0,
+      essential:0,
+      flexible:0,
+      reasons:new Set(),
+      paydays:paydays.filter(d=>monthKey(d)===key)
+    }]));
+    baseEvents.filter(e=>e.amountUSD<0).forEach(e=>{
+      const m=monthMap.get(monthKey(e.date));
+      if(!m)return;
+      if(isEssentialForecastEvent(e))m.essential+=Math.abs(e.amountUSD);
+      else if(['Discretionary','Other','Food'].includes(e.type))m.flexible+=Math.abs(e.amountUSD);
+    });
+    const emptyMonths=[...monthMap.values()].map(m=>({...m,shortfall:m.target,status:m.target?'No contributions scheduled':'Disabled',reasons:[...m.reasons]}));
+    const emptyResult={
+      events:[],
+      months:emptyMonths,
+      totalTarget:emptyMonths.reduce((s,m)=>s+m.target,0),
+      totalTargetContributed:0,
+      totalSwept:0,
+      totalContributed:0,
+      totalShortfall:emptyMonths.reduce((s,m)=>s+m.target,0),
+      endingPrincipal:Math.max(0,Number(cfg.startingBalance)||0)
+    };
+    if(!cfg.enabled||!paydays.length)return emptyResult;
 
     const eventDates=[...new Set(baseEvents.map(e=>e.date))].sort();
     const eventsByDate=new Map();
-    baseEvents.forEach(e=>{if(!eventsByDate.has(e.date))eventsByDate.set(e.date,[]);eventsByDate.get(e.date).push(e);});
+    baseEvents.forEach(e=>{
+      if(!eventsByDate.has(e.date))eventsByDate.set(e.date,[]);
+      eventsByDate.get(e.date).push(e);
+    });
     let cash=Number(state.settings.startingCash)||0;
     let principal=Math.max(0,Number(cfg.startingBalance)||0);
-    let totalContributed=0;
+    let totalTargetContributed=0;
+    let totalSwept=0;
     const savingsEvents=[];
+    const hardFloor=Math.max(0,Number(cfg.cashFloor)||0);
+    const cashCeiling=Math.max(hardFloor,Number(cfg.cashCeiling)||0);
+
+    const addContribution=(day,m,amount,kind)=>{
+      if(amount<=.005)return;
+      cash-=amount;
+      principal+=amount;
+      if(kind==='sweep'){m.swept+=amount;totalSwept+=amount;}
+      else {m.contributed+=amount;totalTargetContributed+=amount;}
+      savingsEvents.push({
+        date:day,
+        name:kind==='sweep'?'Excess cash sweep to investments':'Automatic monthly savings / investment',
+        type:'Savings / investment',
+        amountUSD:-amount,
+        source:'savings',
+        sourceId:`savings_${kind}_${day}`,
+        investmentContributionUSD:amount,
+        savingsKind:kind
+      });
+    };
 
     for(const day of eventDates){
       const dayEvents=sortForecastEvents([...(eventsByDate.get(day)||[])]);
@@ -1345,23 +1519,34 @@
         const urgentDebt=state.debts.some(d=>isUrgentDebt(d)&&(debtSnapshot[d.id]?.balanceUSD||0)>.01);
         const highCostDebt=state.debts.some(d=>(debtSnapshot[d.id]?.balanceUSD||0)>.01&&debtPlannerRate(d,day)>=Math.max(0,Number(cfg.debtFirstApr)||0));
         let desired=normalDesired;
+
         if(urgentDebt||highCostDebt){
           const minimumMonthly=Math.min(m.target,Math.max(0,Number(cfg.minimumWhileDebt)||0));
           const minimumRemaining=Math.max(0,minimumMonthly-m.contributed);
           desired=Math.min(normalDesired,cfg.timing==='firstPaycheck'?minimumRemaining:minimumRemaining/remainingPaydays);
           m.reasons.add(urgentDebt?'Urgent debt takes priority':'High-interest debt takes priority');
         }
+
         const upcoming=baseEvents.filter(e=>e.amountUSD<0&&e.date>=day&&e.date<nextPayday);
         const upcomingOutflows=upcoming.reduce((s,e)=>s+Math.abs(e.amountUSD),0);
         const upcomingEssential=upcoming.filter(isEssentialForecastEvent).reduce((s,e)=>s+Math.abs(e.amountUSD),0);
         const buffer=upcomingEssential*Math.max(0,Number(cfg.essentialBufferPct)||0)/100;
-        const safeAvailable=Math.max(0,cash-upcomingOutflows-buffer-Math.max(0,Number(cfg.cashFloor)||0));
-        const contribution=Math.max(0,Math.min(desired,safeAvailable));
-        if(contribution+.01<desired)m.reasons.add('Cash reserved for bills and living costs');
+        const safeAvailable=Math.max(0,cash-upcomingOutflows-buffer-hardFloor);
+        const targetContribution=Math.max(0,Math.min(desired,safeAvailable));
+        if(targetContribution+.01<desired)m.reasons.add('Cash reserved for bills and living costs');
         if(normalDesired>desired+.01)m.reasons.add('Savings target reduced to favor debt');
-        if(contribution>.005){
-          cash-=contribution;principal+=contribution;m.contributed+=contribution;totalContributed+=contribution;
-          savingsEvents.push({date:day,name:'Automatic savings / investment',type:'Savings / investment',amountUSD:-contribution,source:'savings',sourceId:`savings_${day}`,investmentContributionUSD:contribution});
+        addContribution(day,m,targetContribution,'target');
+
+        if(cfg.sweepExcess!==false){
+          if(urgentDebt||highCostDebt){
+            if(cash>cashCeiling)m.reasons.add('Excess sweep paused until debt-first obligations are cleared');
+          }else{
+            const sweepAvailable=Math.max(0,cash-upcomingOutflows-buffer-cashCeiling);
+            if(sweepAvailable>.005){
+              addContribution(day,m,sweepAvailable,'sweep');
+              m.reasons.add('Safe cash above the emergency-fund ceiling was invested');
+            }
+          }
         }
       }
       nonIncomeEvents.forEach(e=>cash+=e.amountUSD);
@@ -1370,11 +1555,26 @@
     const months=[...monthMap.values()].map(m=>{
       const shortfall=Math.max(0,m.target-m.contributed);
       if(!m.paydays.length&&m.target>0)m.reasons.add('No paycheck scheduled this month');
-      const status=shortfall<=.01?'Target met':m.contributed>0?'Partially funded':'Not funded';
+      const status=shortfall<=.01
+        ? (m.swept>.01?'Target met + excess swept':'Target met')
+        : m.contributed>0
+          ? 'Partially funded'
+          : m.swept>0
+            ? 'Excess swept'
+            : 'Not funded';
       return {...m,shortfall,status,reasons:[...m.reasons]};
     });
     const totalTarget=months.reduce((s,m)=>s+m.target,0);
-    return {events:savingsEvents,months,totalTarget,totalContributed,totalShortfall:Math.max(0,totalTarget-totalContributed),endingPrincipal:principal};
+    return {
+      events:savingsEvents,
+      months,
+      totalTarget,
+      totalTargetContributed,
+      totalSwept,
+      totalContributed:totalTargetContributed+totalSwept,
+      totalShortfall:Math.max(0,totalTarget-totalTargetContributed),
+      endingPrincipal:principal
+    };
   }
 
   function seededRandom(seedText) {
@@ -1536,34 +1736,510 @@
     document.querySelectorAll('[data-chart-mode]').forEach(btn=>btn.classList.toggle('active',btn.dataset.chartMode===chartMode));
     document.getElementById('chartModeDetail').textContent=chartMode==='growth'?'Cash plus a simulated investment-value range. The blue line is the median path; the shaded area spans the 25th–75th percentiles.':'Spendable cash plus investment principal, without assuming any market growth.';
     document.getElementById('chartLegend').innerHTML=chartMode==='growth'?'<span><span class="legend-line"></span>Median cash + investments</span><span><span class="legend-band"></span>25th–75th percentile range</span>':'<span><span class="legend-line"></span>Cash + investment principal</span>';
+    renderMonthlySpendingRoom(s);
     drawCashChart(s);
   }
 
+  function buildMonthlySpendingRoom(summary) {
+    const keys=monthKeysBetween(state.settings.forecastStart,state.settings.targetDate);
+    const map=new Map(keys.map(key=>[key,{
+      key,income:0,debt:0,housing:0,vehicle:0,otherFixed:0,savings:0,food:0,fun:0,
+      carryIn:0,endCash:0,availableBeforeFoodFun:0,afterFoodFun:0
+    }]));
+    summary.events.forEach(event=>{
+      const m=map.get(monthKey(event.date));
+      if(!m)return;
+      if(event.source==='income'&&event.amountUSD>0)m.income+=event.amountUSD;
+      else if(event.source==='savings')m.savings+=Math.abs(event.amountUSD);
+      else if(event.type==='Debt payment')m.debt+=Math.abs(event.amountUSD);
+      else if(event.type==='Housing')m.housing+=Math.abs(event.amountUSD);
+      else if(event.type==='Vehicle')m.vehicle+=Math.abs(event.amountUSD);
+      else if(event.type==='Food')m.food+=Math.abs(event.amountUSD);
+      else if(['Discretionary','Other'].includes(event.type))m.fun+=Math.abs(event.amountUSD);
+      else if(event.amountUSD<0)m.otherFixed+=Math.abs(event.amountUSD);
+    });
+    let previousEnd=Number(state.settings.startingCash)||0;
+    for(const key of keys){
+      const m=map.get(key);
+      const monthEvents=summary.events.filter(e=>monthKey(e.date)===key);
+      m.carryIn=previousEnd;
+      m.endCash=monthEvents.length?monthEvents[monthEvents.length-1].runningBalance:previousEnd;
+      m.fixed=m.debt+m.housing+m.vehicle+m.otherFixed;
+      m.availableBeforeFoodFun=m.income-m.fixed-m.savings;
+      m.afterFoodFun=m.availableBeforeFoodFun-m.food-m.fun;
+      m.cashBeforeFoodFun=m.carryIn+m.availableBeforeFoodFun;
+      previousEnd=m.endCash;
+    }
+    return [...map.values()];
+  }
+
+  function monthlyAllocationCategories(month) {
+    return [
+      {key:'debt',label:'Debt payments',value:month.debt,color:'#ef4444'},
+      {key:'housing',label:'Housing',value:month.housing,color:'#2563eb'},
+      {key:'vehicle',label:'Vehicle costs',value:month.vehicle,color:'#8b5cf6'},
+      {key:'otherFixed',label:'Other fixed costs',value:month.otherFixed,color:'#64748b'},
+      {key:'savings',label:'Savings / investments',value:month.savings,color:'#10b981'},
+      {key:'food',label:'Food',value:month.food,color:'#f59e0b'},
+      {key:'fun',label:'Fun / other',value:month.fun,color:'#ec4899'}
+    ].filter(item=>item.value>.005);
+  }
+
+  function drawMonthlyAllocationChart(month) {
+    const canvas=document.getElementById('monthlyAllocationChart');
+    const shell=document.getElementById('monthlyAllocationShell');
+    if(!canvas||!shell||!month)return;
+    const categories=monthlyAllocationCategories(month);
+    const total=categories.reduce((sum,item)=>sum+item.value,0);
+    monthlyAllocationView.selected=month;
+    monthlyAllocationView.segments=[];
+    const rect=canvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    const width=Math.max(280,rect.width||420),height=rect.height||300;
+    canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+    const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+    document.getElementById('monthlyAllocationTotal').textContent=money(total);
+    document.getElementById('monthlyAllocationSubtitle').textContent=`${monthLabel(month.key)} · ${categories.length} active categor${categories.length===1?'y':'ies'}`;
+    const legend=document.getElementById('monthlyAllocationLegend');
+    if(total<=.005){
+      ctx.fillStyle='#64748b';ctx.font='600 14px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('No spending or allocations this month',width/2,height/2);
+      legend.innerHTML='<div class="allocation-empty">No debt payments, bills, savings, food, or discretionary spending are scheduled in this month.</div>';
+      return;
+    }
+    const cx=width/2,cy=height/2,radius=Math.max(72,Math.min(width,height)*.37),inner=radius*.58;
+    let start=-Math.PI/2;
+    categories.forEach((item,index)=>{
+      const angle=item.value/total*Math.PI*2,end=start+angle;
+      const active=index===monthlyAllocationView.activeIndex;
+      const mid=(start+end)/2,offset=active?6:0;
+      const ox=Math.cos(mid)*offset,oy=Math.sin(mid)*offset;
+      ctx.beginPath();ctx.moveTo(cx+ox,cy+oy);ctx.arc(cx+ox,cy+oy,radius+(active?2:0),start,end);ctx.arc(cx+ox,cy+oy,inner,end,start,true);ctx.closePath();ctx.fillStyle=item.color;ctx.globalAlpha=monthlyAllocationView.activeIndex>=0&&!active?.52:1;ctx.fill();ctx.globalAlpha=1;
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      monthlyAllocationView.segments.push({...item,index,start,end,cx,cy,radius,inner,total,percent:item.value/total*100});
+      start=end;
+    });
+    ctx.fillStyle='#0f172a';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='800 20px system-ui';ctx.fillText(money(total),cx,cy-8);ctx.fillStyle='#64748b';ctx.font='700 11px system-ui';ctx.fillText('TOTAL ALLOCATED',cx,cy+15);
+    legend.innerHTML=categories.map((item,index)=>{const percent=item.value/total*100;return `<button type="button" class="allocation-legend-row ${index===monthlyAllocationView.activeIndex?'active':''}" data-allocation-index="${index}"><span class="allocation-swatch" style="background:${item.color}"></span><span class="allocation-label">${escapeHtml(item.label)}</span><span class="allocation-amount">${money2(item.value)}</span><span class="allocation-percent">${percent.toFixed(percent<10?1:0)}%</span></button>`;}).join('');
+  }
+
+  function allocationSegmentAt(clientX,clientY) {
+    const canvas=document.getElementById('monthlyAllocationChart');
+    const rect=canvas.getBoundingClientRect();
+    const x=clientX-rect.left,y=clientY-rect.top;
+    for(const segment of monthlyAllocationView.segments){
+      const dx=x-segment.cx,dy=y-segment.cy,distance=Math.hypot(dx,dy);
+      if(distance<segment.inner||distance>segment.radius+10)continue;
+      let angle=Math.atan2(dy,dx);if(angle<-Math.PI/2)angle+=Math.PI*2;
+      let start=segment.start,end=segment.end;if(start<-Math.PI/2)start+=Math.PI*2;if(end<-Math.PI/2)end+=Math.PI*2;
+      if(end<start)end+=Math.PI*2;if(angle<start)angle+=Math.PI*2;
+      if(angle>=start&&angle<=end)return segment;
+    }
+    return null;
+  }
+
+  function showMonthlyAllocationTooltip(segment,clientX,clientY) {
+    const tooltip=document.getElementById('monthlyAllocationTooltip');
+    const shell=document.getElementById('monthlyAllocationShell');
+    if(!segment){tooltip.classList.remove('show');return;}
+    monthlyAllocationView.activeIndex=segment.index;
+    drawMonthlyAllocationChart(monthlyAllocationView.selected);
+    const shellRect=shell.getBoundingClientRect();
+    let left=clientX-shellRect.left,top=clientY-shellRect.top;
+    left=Math.max(95,Math.min(shellRect.width-95,left));top=Math.max(70,Math.min(shellRect.height-5,top));
+    tooltip.innerHTML=`<strong>${escapeHtml(segment.label)}</strong>${money2(segment.value)} · ${segment.percent.toFixed(1)}% of monthly allocations`;
+    tooltip.style.left=`${left}px`;tooltip.style.top=`${top}px`;tooltip.classList.add('show');
+  }
+
+  function setupMonthlyAllocationInteractions() {
+    const canvas=document.getElementById('monthlyAllocationChart');
+    const legend=document.getElementById('monthlyAllocationLegend');
+    canvas.addEventListener('pointermove',event=>{if(event.pointerType==='touch')return;showMonthlyAllocationTooltip(allocationSegmentAt(event.clientX,event.clientY),event.clientX,event.clientY);});
+    canvas.addEventListener('pointerup',event=>showMonthlyAllocationTooltip(allocationSegmentAt(event.clientX,event.clientY),event.clientX,event.clientY));
+    canvas.addEventListener('pointerleave',()=>{monthlyAllocationView.activeIndex=-1;document.getElementById('monthlyAllocationTooltip').classList.remove('show');if(monthlyAllocationView.selected)drawMonthlyAllocationChart(monthlyAllocationView.selected);});
+    legend.addEventListener('pointerover',event=>{const button=event.target.closest('[data-allocation-index]');if(!button)return;monthlyAllocationView.activeIndex=Number(button.dataset.allocationIndex);drawMonthlyAllocationChart(monthlyAllocationView.selected);});
+    legend.addEventListener('click',event=>{const button=event.target.closest('[data-allocation-index]');if(!button)return;const segment=monthlyAllocationView.segments[Number(button.dataset.allocationIndex)];if(!segment)return;const rect=canvas.getBoundingClientRect();showMonthlyAllocationTooltip(segment,rect.left+rect.width/2,rect.top+rect.height/2);});
+    legend.addEventListener('pointerleave',()=>{monthlyAllocationView.activeIndex=-1;document.getElementById('monthlyAllocationTooltip').classList.remove('show');if(monthlyAllocationView.selected)drawMonthlyAllocationChart(monthlyAllocationView.selected);});
+  }
+
+  function renderMonthlySpendingRoom(summary) {
+    const months=buildMonthlySpendingRoom(summary);
+    if(!months.length)return;
+    if(!selectedMonthlyRoomKey||!months.some(m=>m.key===selectedMonthlyRoomKey)){
+      selectedMonthlyRoomKey=months[0].key;
+    }
+    const selected=months.find(m=>m.key===selectedMonthlyRoomKey)||months[0];
+    const select=document.getElementById('monthlyRoomSelect');
+    select.innerHTML=months.map(m=>`<option value="${m.key}">${monthLabel(m.key)}</option>`).join('');
+    select.value=selected.key;
+    const selectedIndex=months.findIndex(m=>m.key===selected.key);
+    document.getElementById('monthlyRoomPrev').disabled=selectedIndex<=0;
+    document.getElementById('monthlyRoomNext').disabled=selectedIndex>=months.length-1;
+
+    document.getElementById('monthlyRoomStrip').innerHTML=months.map(m=>`<button type="button" class="monthly-room-chip ${m.key===selected.key?'active':''} ${m.availableBeforeFoodFun<0?'negative':''}" data-month-room="${m.key}"><span>${monthLabel(m.key)}</span><strong>${money(m.availableBeforeFoodFun)}</strong></button>`).join('');
+
+    const available=document.getElementById('monthlyRoomAvailable');
+    available.textContent=money(selected.availableBeforeFoodFun);
+    available.className=`value ${selected.availableBeforeFoodFun>=0?'positive':'negative'}`;
+    document.getElementById('monthlyRoomFormula').textContent=`${money(selected.income)} net income − ${money(selected.fixed)} fixed obligations − ${money(selected.savings)} invested`;
+
+    const stats=[
+      ['Net income',selected.income],
+      ['Debt payments',selected.debt],
+      ['Housing',selected.housing],
+      ['Vehicle costs',selected.vehicle],
+      ['Other fixed costs',selected.otherFixed],
+      ['Saved / invested',selected.savings],
+      ['Planned food',selected.food],
+      ['Planned fun / other',selected.fun],
+      ['Month-end spendable cash',selected.endCash]
+    ];
+    document.getElementById('monthlyRoomStats').innerHTML=stats.map(([label,value])=>`<div class="monthly-room-stat"><span>${escapeHtml(label)}</span><strong class="${label==='Month-end spendable cash'&&value<0?'negative':''}">${money(value)}</strong></div>`).join('');
+    document.getElementById('monthlyRoomNote').textContent=`Including ${money(selected.carryIn)} carried into the month, cash available before food and fun is ${money(selected.cashBeforeFoodFun)}. After the currently planned ${money(selected.food)} of food and ${money(selected.fun)} of fun/other spending, this month's income contribution is ${money(selected.afterFoodFun)} and projected month-end cash is ${money(selected.endCash)}.`;
+    drawMonthlyAllocationChart(selected);
+
+    requestAnimationFrame(()=>{
+      document.querySelector(`[data-month-room="${selected.key}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    });
+  }
+
+  function niceMoneyStep(range) {
+    const safe=Math.max(1,range);
+    if(safe>=100000)return Math.max(50000,Math.ceil((safe/5)/50000)*50000);
+    const target=safe/5;
+    const choices=[50,100,250,500,1000,2500,5000,10000,25000,50000];
+    return choices.find(v=>v>=target)||50000;
+  }
+
+  function axisMoney(value) {
+    const abs=Math.abs(value);
+    if(abs>=1000000)return `${value<0?'−':''}$${(abs/1000000).toFixed(abs>=10000000?0:1)}M`;
+    if(abs>=1000)return `${value<0?'−':''}$${Math.round(abs/1000)}k`;
+    return `${value<0?'−':''}$${Math.round(abs)}`;
+  }
+
+  function chartTickSpec(startMs,endMs) {
+    const days=(endMs-startMs)/86400000;
+    if(days<=550)return {unit:'month',label:d=>d.toLocaleDateString('en-US',{month:'short',year:'numeric'})};
+    if(days<=1826)return {unit:'quarter',label:d=>`Q${Math.floor(d.getMonth()/3)+1} ${d.getFullYear()}`};
+    return {unit:'year',label:d=>String(d.getFullYear())};
+  }
+
+  function chartTickDates(startMs,endMs,spec) {
+    const out=[];
+    const start=new Date(startMs);
+    let d;
+    if(spec.unit==='month')d=new Date(start.getFullYear(),start.getMonth()+1,1);
+    else if(spec.unit==='quarter'){
+      const nextQuarter=Math.floor(start.getMonth()/3)*3+3;
+      d=new Date(start.getFullYear(),nextQuarter,1);
+    }else d=new Date(start.getFullYear()+1,0,1);
+    let guard=0;
+    while(d.getTime()<endMs&&guard++<300){
+      out.push(new Date(d));
+      if(spec.unit==='month')d=addMonths(d,1);
+      else if(spec.unit==='quarter')d=addMonths(d,3);
+      else d=addMonths(d,12);
+    }
+    return out;
+  }
+
+  function clampChartWindow(startMs,endMs,fullStart,fullEnd) {
+    const fullSpan=Math.max(86400000,fullEnd-fullStart);
+    const minSpan=Math.min(fullSpan,30*86400000);
+    let span=Math.max(minSpan,Math.min(fullSpan,endMs-startMs));
+    let start=startMs,end=start+span;
+    if(start<fullStart){start=fullStart;end=start+span;}
+    if(end>fullEnd){end=fullEnd;start=end-span;}
+    return {startMs:start,endMs:end};
+  }
+
+  function setChartWindow(startMs,endMs) {
+    const render=chartView.render;
+    if(!render)return;
+    const clamped=clampChartWindow(startMs,endMs,render.fullStart,render.fullEnd);
+    chartView.startMs=clamped.startMs;
+    chartView.endMs=clamped.endMs;
+    drawCashChart(chartView.summary);
+  }
+
+  function resetChartWindow() {
+    chartView.startMs=null;
+    chartView.endMs=null;
+    chartView.dragging=false;
+    chartView.dragStartX=null;
+    chartView.dragCurrentX=null;
+    chartView.pinch=null;
+    document.getElementById('chartTooltip').classList.remove('show');
+    if(chartView.summary)drawCashChart(chartView.summary);
+  }
+
+  function chartPointerPosition(event) {
+    const canvas=document.getElementById('cashChart');
+    const rect=canvas.getBoundingClientRect();
+    return {x:event.clientX-rect.left,y:event.clientY-rect.top};
+  }
+
+  function showChartTooltip(clientX,clientY) {
+    const render=chartView.render;
+    if(!render||!render.points.length)return;
+    const canvas=document.getElementById('cashChart');
+    const shell=document.getElementById('chartShell');
+    const rect=canvas.getBoundingClientRect();
+    const shellRect=shell.getBoundingClientRect();
+    const localX=clientX-rect.left;
+    if(localX<render.plot.l||localX>render.plot.r)return document.getElementById('chartTooltip').classList.remove('show');
+    const targetTime=render.viewStart+(localX-render.plot.l)/(render.plot.r-render.plot.l)*(render.viewEnd-render.viewStart);
+    let nearest=render.points[0],best=Math.abs(nearest.time-targetTime);
+    for(const pt of render.points){
+      const distance=Math.abs(pt.time-targetTime);
+      if(distance<best){nearest=pt;best=distance;}
+    }
+    const mode=state.savings?.chartMode||'principal';
+    const investedPrincipal=nearest.principalInvestment;
+    const medianInvestment=nearest.median-nearest.cash;
+    const lowInvestment=nearest.low-nearest.cash;
+    const highInvestment=nearest.high-nearest.cash;
+    const rows=mode==='growth'
+      ? [
+          ['Spendable cash',money2(nearest.cash)],
+          ['Median invested value',money2(medianInvestment)],
+          ['25th–75th invested',`${money(lowInvestment)} – ${money(highInvestment)}`],
+          ['Combined median',money2(nearest.median)]
+        ]
+      : [
+          ['Spendable cash',money2(nearest.cash)],
+          ['Investment principal',money2(investedPrincipal)],
+          ['Combined total',money2(nearest.principalTotal)]
+        ];
+    const tooltip=document.getElementById('chartTooltip');
+    tooltip.innerHTML=`<div class="chart-tooltip-title">${fmtDate(nearest.date)}</div>${rows.map(([label,value])=>`<div class="chart-tooltip-row"><span>${label}</span><strong>${value}</strong></div>`).join('')}`;
+    let left=clientX-shellRect.left;
+    let top=clientY-shellRect.top;
+    left=Math.max(120,Math.min(shellRect.width-120,left));
+    top=Math.max(90,Math.min(shellRect.height-10,top));
+    tooltip.style.left=`${left}px`;
+    tooltip.style.top=`${top}px`;
+    tooltip.classList.add('show');
+  }
+
+  function setupChartInteractions() {
+    const canvas=document.getElementById('cashChart');
+    const reset=document.getElementById('resetChartZoom');
+    reset.addEventListener('click',resetChartWindow);
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&(chartView.startMs!==null||chartView.endMs!==null))resetChartWindow();});
+    canvas.addEventListener('dblclick',resetChartWindow);
+    canvas.addEventListener('mouseleave',()=>{if(!chartView.dragging)document.getElementById('chartTooltip').classList.remove('show');});
+
+    canvas.addEventListener('wheel',event=>{
+      if(!event.ctrlKey)return;
+      event.preventDefault();
+      const render=chartView.render;
+      if(!render)return;
+      const pos=chartPointerPosition(event);
+      const ratio=Math.max(0,Math.min(1,(pos.x-render.plot.l)/(render.plot.r-render.plot.l)));
+      const currentStart=render.viewStart,currentEnd=render.viewEnd,currentSpan=currentEnd-currentStart;
+      const factor=Math.exp(event.deltaY*.0025);
+      const newSpan=currentSpan*factor;
+      const anchor=currentStart+ratio*currentSpan;
+      setChartWindow(anchor-ratio*newSpan,anchor+(1-ratio)*newSpan);
+    },{passive:false});
+
+    canvas.addEventListener('pointerdown',event=>{
+      canvas.setPointerCapture?.(event.pointerId);
+      const pos=chartPointerPosition(event);
+      chartView.pointers.set(event.pointerId,pos);
+      if(chartView.pointers.size===2){
+        const pts=[...chartView.pointers.values()];
+        const render=chartView.render;
+        if(!render)return;
+        chartView.dragging=false;
+        chartView.pinch={
+          distance:Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)),
+          centerX:(pts[0].x+pts[1].x)/2,
+          startMs:render.viewStart,
+          endMs:render.viewEnd
+        };
+        return;
+      }
+      if(event.button!==0&&event.pointerType!=='touch')return;
+      chartView.dragging=true;
+      chartView.dragPointerId=event.pointerId;
+      chartView.dragStartX=pos.x;
+      chartView.dragCurrentX=pos.x;
+      document.getElementById('chartTooltip').classList.remove('show');
+    });
+
+    canvas.addEventListener('pointermove',event=>{
+      const pos=chartPointerPosition(event);
+      if(chartView.pointers.has(event.pointerId))chartView.pointers.set(event.pointerId,pos);
+      if(chartView.pointers.size===2&&chartView.pinch){
+        event.preventDefault();
+        const pts=[...chartView.pointers.values()];
+        const distance=Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y));
+        const scale=distance/chartView.pinch.distance;
+        const render=chartView.render;
+        const initialSpan=chartView.pinch.endMs-chartView.pinch.startMs;
+        const ratio=Math.max(0,Math.min(1,(chartView.pinch.centerX-render.plot.l)/(render.plot.r-render.plot.l)));
+        const anchor=chartView.pinch.startMs+ratio*initialSpan;
+        const newSpan=initialSpan/Math.max(.15,scale);
+        setChartWindow(anchor-ratio*newSpan,anchor+(1-ratio)*newSpan);
+        return;
+      }
+      if(chartView.dragging&&chartView.dragPointerId===event.pointerId){
+        chartView.dragCurrentX=pos.x;
+        drawCashChart(chartView.summary);
+      }else if(event.pointerType!=='touch'){
+        showChartTooltip(event.clientX,event.clientY);
+      }
+    });
+
+    const finishPointer=event=>{
+      const pos=chartPointerPosition(event);
+      const wasPinching=chartView.pointers.size>=2||!!chartView.pinch;
+      chartView.pointers.delete(event.pointerId);
+      if(wasPinching){
+        if(chartView.pointers.size<2)chartView.pinch=null;
+        chartView.dragging=false;
+        return;
+      }
+      if(chartView.dragging&&chartView.dragPointerId===event.pointerId){
+        const render=chartView.render;
+        const startX=Math.max(render.plot.l,Math.min(render.plot.r,chartView.dragStartX));
+        const endX=Math.max(render.plot.l,Math.min(render.plot.r,pos.x));
+        const distance=Math.abs(endX-startX);
+        chartView.dragging=false;
+        chartView.dragPointerId=null;
+        chartView.dragStartX=null;
+        chartView.dragCurrentX=null;
+        if(distance>=18){
+          const first=Math.min(startX,endX),last=Math.max(startX,endX);
+          const firstTime=render.viewStart+(first-render.plot.l)/(render.plot.r-render.plot.l)*(render.viewEnd-render.viewStart);
+          const lastTime=render.viewStart+(last-render.plot.l)/(render.plot.r-render.plot.l)*(render.viewEnd-render.viewStart);
+          setChartWindow(firstTime,lastTime);
+        }else{
+          drawCashChart(chartView.summary);
+          showChartTooltip(event.clientX,event.clientY);
+        }
+      }
+    };
+    canvas.addEventListener('pointerup',finishPointer);
+    canvas.addEventListener('pointercancel',finishPointer);
+  }
+
   function drawCashChart(summary) {
+    chartView.summary=summary;
     const canvas=document.getElementById('cashChart');
     const rect=canvas.getBoundingClientRect();
     const dpr=window.devicePixelRatio||1;
-    canvas.width=Math.max(700,rect.width*dpr); canvas.height=330*dpr;
-    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
-    const w=canvas.width/dpr,h=canvas.height/dpr,p={l:68,r:22,t:20,b:42};
+    const cssWidth=Math.max(700,rect.width||700);
+    const cssHeight=rect.height||390;
+    canvas.width=Math.round(cssWidth*dpr);
+    canvas.height=Math.round(cssHeight*dpr);
+    const ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const w=cssWidth,h=cssHeight,p={l:76,r:24,t:20,b:54};
+    const plot={l:p.l,r:w-p.r,t:p.t,b:h-p.b};
     ctx.clearRect(0,0,w,h);
+
+    const byDate=new Map();
+    summary.investmentProjection.points.forEach(pt=>byDate.set(pt.date,{...pt,time:parseDate(pt.date).getTime()}));
+    const allPoints=[...byDate.values()].sort((a,b)=>a.time-b.time);
+    if(!allPoints.length)return;
+    const fullStart=allPoints[0].time,fullEnd=allPoints[allPoints.length-1].time;
+    let viewStart=chartView.startMs??fullStart,viewEnd=chartView.endMs??fullEnd;
+    ({startMs:viewStart,endMs:viewEnd}=clampChartWindow(viewStart,viewEnd,fullStart,fullEnd));
+    if(chartView.startMs!==null){chartView.startMs=viewStart;chartView.endMs=viewEnd;}
+
+    const visible=allPoints.filter(pt=>pt.time>=viewStart&&pt.time<=viewEnd);
+    const before=[...allPoints].reverse().find(pt=>pt.time<viewStart);
+    const after=allPoints.find(pt=>pt.time>viewEnd);
+    if(before)visible.unshift(before);
+    if(after)visible.push(after);
     const mode=state.savings?.chartMode||'principal';
-    const investmentPoints=summary.investmentProjection.points;
-    const points=investmentPoints.map(pt=>({date:pt.date,balance:mode==='growth'?pt.median:pt.principalTotal,low:mode==='growth'?pt.low:null,high:mode==='growth'?pt.high:null}));
-    const vals=points.flatMap(pt=>mode==='growth'?[pt.low,pt.high]:[pt.balance]);
-    let min=Math.min(...vals,0),max=Math.max(...vals,0);if(max===min){max+=1;min-=1;}const pad=(max-min)*.12;max+=pad;min-=pad;
-    const x=i=>p.l+(w-p.l-p.r)*(points.length===1?0:i/(points.length-1));
-    const y=v=>p.t+(h-p.t-p.b)*(max-v)/(max-min);
-    ctx.strokeStyle='#dce3ec';ctx.lineWidth=1;ctx.fillStyle='#64748b';ctx.font='12px system-ui';
-    for(let i=0;i<=4;i++){const val=max-(max-min)*i/4,yy=y(val);ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(w-p.r,yy);ctx.stroke();ctx.fillText(money(val).replace('.00',''),4,yy+4);}
-    if(min<0&&max>0){ctx.strokeStyle='#ef4444';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(p.l,y(0));ctx.lineTo(w-p.r,y(0));ctx.stroke();ctx.setLineDash([]);}
-    if(mode==='growth'&&points.length>1){
-      ctx.beginPath();points.forEach((pt,i)=>{if(i===0)ctx.moveTo(x(i),y(pt.high));else ctx.lineTo(x(i),y(pt.high));});
-      for(let i=points.length-1;i>=0;i--)ctx.lineTo(x(i),y(points[i].low));ctx.closePath();ctx.fillStyle='rgba(96,165,250,.22)';ctx.fill();
+    const valueOf=pt=>mode==='growth'?pt.median:pt.principalTotal;
+    const lowOf=pt=>mode==='growth'?pt.low:valueOf(pt);
+    const highOf=pt=>mode==='growth'?pt.high:valueOf(pt);
+    const values=visible.flatMap(pt=>[lowOf(pt),highOf(pt),valueOf(pt)]);
+    let rawMin=Math.min(0,...values),rawMax=Math.max(0,...values);
+    if(rawMax===rawMin){rawMax+=1000;rawMin-=1000;}
+    const step=niceMoneyStep(rawMax-rawMin);
+    let yMin=Math.floor(rawMin/step)*step,yMax=Math.ceil(rawMax/step)*step;
+    if(yMax===yMin)yMax=yMin+step;
+    const xTime=time=>plot.l+(time-viewStart)/(viewEnd-viewStart)*(plot.r-plot.l);
+    const yValue=value=>plot.t+(yMax-value)/(yMax-yMin)*(plot.b-plot.t);
+
+    ctx.font='12px system-ui';
+    ctx.lineWidth=1;
+    ctx.textBaseline='middle';
+    ctx.textAlign='right';
+    for(let value=yMin;value<=yMax+.001;value+=step){
+      const yy=yValue(value);
+      ctx.strokeStyle='#e2e8f0';
+      ctx.beginPath();ctx.moveTo(plot.l,yy);ctx.lineTo(plot.r,yy);ctx.stroke();
+      ctx.fillStyle='#64748b';
+      ctx.fillText(axisMoney(value),plot.l-9,yy);
     }
-    ctx.beginPath();points.forEach((pt,i)=>{if(i===0)ctx.moveTo(x(i),y(pt.balance));else{ctx.lineTo(x(i),y(points[i-1].balance));ctx.lineTo(x(i),y(pt.balance));}});ctx.strokeStyle='#2563eb';ctx.lineWidth=3;ctx.stroke();
-    points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(x(i),y(pt.balance),3.2,0,Math.PI*2);ctx.fillStyle=pt.balance<0?'#c62828':'#2563eb';ctx.fill();});
-    const labels=[0,Math.floor((points.length-1)/2),points.length-1];ctx.fillStyle='#64748b';ctx.textAlign='center';[...new Set(labels)].forEach(i=>ctx.fillText(new Date(points[i].date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:points.length>60?'2-digit':undefined}),x(i),h-14));ctx.textAlign='left';
+
+    const tickSpec=chartTickSpec(viewStart,viewEnd);
+    const ticks=chartTickDates(viewStart,viewEnd,tickSpec);
+    ctx.textBaseline='top';
+    ctx.textAlign='center';
+    for(const tick of ticks){
+      const xx=xTime(tick.getTime());
+      if(xx<plot.l||xx>plot.r)continue;
+      ctx.strokeStyle='#eef2f7';
+      ctx.beginPath();ctx.moveTo(xx,plot.t);ctx.lineTo(xx,plot.b);ctx.stroke();
+      ctx.fillStyle='#64748b';
+      ctx.fillText(tickSpec.label(tick),xx,plot.b+12);
+    }
+
+    if(yMin<0&&yMax>0){
+      ctx.strokeStyle='#ef4444';
+      ctx.setLineDash([5,5]);
+      ctx.beginPath();ctx.moveTo(plot.l,yValue(0));ctx.lineTo(plot.r,yValue(0));ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if(mode==='growth'&&visible.length>1){
+      ctx.beginPath();
+      visible.forEach((pt,i)=>{const xx=xTime(pt.time),yy=yValue(highOf(pt));if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);});
+      for(let i=visible.length-1;i>=0;i--)ctx.lineTo(xTime(visible[i].time),yValue(lowOf(visible[i])));
+      ctx.closePath();
+      ctx.fillStyle='rgba(96,165,250,.22)';
+      ctx.fill();
+    }
+
+    ctx.save();
+    ctx.beginPath();ctx.rect(plot.l,plot.t,plot.r-plot.l,plot.b-plot.t);ctx.clip();
+    ctx.beginPath();
+    visible.forEach((pt,i)=>{const xx=xTime(pt.time),yy=yValue(valueOf(pt));if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);});
+    ctx.strokeStyle='#2563eb';
+    ctx.lineWidth=3;
+    ctx.lineJoin='round';
+    ctx.stroke();
+    if(visible.length<=90){
+      visible.forEach(pt=>{
+        ctx.beginPath();ctx.arc(xTime(pt.time),yValue(valueOf(pt)),3.2,0,Math.PI*2);
+        ctx.fillStyle=valueOf(pt)<0?'#c62828':'#2563eb';ctx.fill();
+      });
+    }
+    if(chartView.dragging&&chartView.dragStartX!==null&&chartView.dragCurrentX!==null){
+      const a=Math.max(plot.l,Math.min(plot.r,chartView.dragStartX));
+      const b=Math.max(plot.l,Math.min(plot.r,chartView.dragCurrentX));
+      ctx.fillStyle='rgba(37,99,235,.15)';
+      ctx.fillRect(Math.min(a,b),plot.t,Math.abs(b-a),plot.b-plot.t);
+      ctx.strokeStyle='rgba(37,99,235,.8)';
+      ctx.lineWidth=1.5;
+      ctx.strokeRect(Math.min(a,b),plot.t,Math.abs(b-a),plot.b-plot.t);
+    }
+    ctx.restore();
+
+    const zoomed=Math.abs(viewStart-fullStart)>86400000||Math.abs(viewEnd-fullEnd)>86400000;
+    document.getElementById('resetChartZoom').disabled=!zoomed;
+    const rangeStart=new Date(viewStart).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+    const rangeEnd=new Date(viewEnd).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+    document.getElementById('chartRangeLabel').textContent=`Showing ${rangeStart} – ${rangeEnd} · ${tickSpec.unit}ly date marks · ${axisMoney(step)} vertical increments`;
+    chartView.render={fullStart,fullEnd,viewStart,viewEnd,plot,points:allPoints,visible,yMin,yMax,step};
   }
 
   function renderIncome() {
@@ -1572,18 +2248,45 @@
 
   function renderSavings() {
     const cfg=Object.assign({},defaultState.savings,state.savings||{}),summary=getSummary(),plan=summary.savingsProjection,investment=summary.investmentProjection;
-    savingsEnabled.checked=!!cfg.enabled;savingsMonthlyTarget.value=cfg.monthlyTarget;savingsStartingBalance.value=cfg.startingBalance;savingsTiming.value=cfg.timing;savingsCashFloor.value=cfg.cashFloor;savingsEssentialBuffer.value=cfg.essentialBufferPct;savingsDebtFirstApr.value=cfg.debtFirstApr;savingsMinimumWhileDebt.value=cfg.minimumWhileDebt;savingsReturnPreset.value=cfg.returnPreset;savingsExpectedReturn.value=cfg.expectedReturn;savingsVolatility.value=cfg.volatility;
+    savingsEnabled.checked=!!cfg.enabled;
+    savingsMonthlyTarget.value=cfg.monthlyTarget;
+    savingsStartingBalance.value=cfg.startingBalance;
+    savingsTiming.value=cfg.timing;
+    savingsCashFloor.value=cfg.cashFloor;
+    savingsCashCeiling.value=cfg.cashCeiling;
+    savingsSweepExcess.checked=cfg.sweepExcess!==false;
+    savingsEssentialBuffer.value=cfg.essentialBufferPct;
+    savingsDebtFirstApr.value=cfg.debtFirstApr;
+    savingsMinimumWhileDebt.value=cfg.minimumWhileDebt;
+    savingsReturnPreset.value=cfg.returnPreset;
+    savingsExpectedReturn.value=cfg.expectedReturn;
+    savingsVolatility.value=cfg.volatility;
+
     document.getElementById('savingsTargetMetric').textContent=money(cfg.monthlyTarget);
     document.getElementById('savingsContributionMetric').textContent=money(plan.totalContributed);
-    document.getElementById('savingsContributionDetail').textContent=plan.totalTarget>0?`${Math.round(plan.totalContributed/plan.totalTarget*100)}% of ${money(plan.totalTarget)} cumulative target`:'Enable the plan and enter a monthly target.';
+    document.getElementById('savingsContributionDetail').textContent=`${money(plan.totalTargetContributed)} monthly targets + ${money(plan.totalSwept)} excess-cash sweeps`;
     document.getElementById('savingsInvestmentMetric').textContent=money(investment.endingMedianInvestment);
     document.getElementById('savingsInvestmentDetail').textContent=`Principal ${money(investment.endingPrincipalInvestment)} · modeled 25%–75% range ${money(investment.endingLowInvestment)}–${money(investment.endingHighInvestment)}`;
     document.getElementById('savingsShortfallMetric').textContent=money(plan.totalShortfall);
-    const debtBlocked=plan.months.filter(m=>m.reasons.some(r=>r.includes('debt'))).length;
+
+    const debtBlocked=plan.months.filter(m=>m.reasons.some(r=>r.toLowerCase().includes('debt'))).length;
     const cashBlocked=plan.months.filter(m=>m.reasons.some(r=>r.includes('Cash reserved'))).length;
-    document.getElementById('savingsPlanSummary').innerHTML=!cfg.enabled?'<strong>Savings plan is off.</strong> Enable it to schedule contributions immediately after income arrives.':plan.totalShortfall<=.01?`<strong>Target is feasible.</strong> The forecast contributes ${money(plan.totalContributed)} while preserving scheduled bills and the ${money(cfg.cashFloor)} spendable-cash floor.`:`<strong>The requested target is not fully affordable under current assumptions.</strong> ${money(plan.totalShortfall)} is deferred rather than forcing a cash shortfall.${debtBlocked?` Debt takes priority in ${debtBlocked} month${debtBlocked===1?'':'s'}.`:''}${cashBlocked?` Living costs or the cash floor constrain ${cashBlocked} month${cashBlocked===1?'':'s'}.`:''} Reduce flexible spending, lower the target, increase income, or clear expensive debt sooner.`;
-    document.getElementById('savingsMonthlyTable').innerHTML=plan.months.length?plan.months.map(m=>{const cls=m.shortfall<=.01?'good':m.contributed>0?'warn':'bad';const response=m.reasons.length?m.reasons.join('; '):m.shortfall<=.01?'Target met without violating reserves':'No contribution opportunity';return `<tr><td>${monthLabel(m.key)}</td><td>${money2(m.target)}</td><td>${money2(m.contributed)}</td><td>${money2(m.shortfall)}</td><td>${money2(m.essential)}</td><td>${money2(m.flexible)}</td><td><span class="savings-status ${cls}">${m.status}</span><div class="muted small" style="margin-top:5px">${escapeHtml(response)}</div></td></tr>`}).join(''):'<tr><td colspan="7" class="muted">No forecast months available.</td></tr>';
+    const sweepText=plan.totalSwept>0?` The dynamic cash ceiling invests ${money(plan.totalSwept)} that would otherwise sit above your ${money(Math.max(cfg.cashFloor,cfg.cashCeiling))} emergency-fund reserve.`:'';
+    document.getElementById('savingsPlanSummary').innerHTML=!cfg.enabled
+      ? '<strong>Savings plan is off.</strong> Enable it to schedule contributions and excess-cash sweeps immediately after income arrives.'
+      : plan.totalShortfall<=.01
+        ? `<strong>Target is feasible.</strong> The forecast invests ${money(plan.totalContributed)} while preserving scheduled bills, the ${money(cfg.cashFloor)} hard floor, and the ${money(Math.max(cfg.cashFloor,cfg.cashCeiling))} emergency-fund ceiling.${sweepText}`
+        : `<strong>The requested monthly target is not fully affordable under current assumptions.</strong> ${money(plan.totalShortfall)} is deferred rather than forcing a cash shortfall.${debtBlocked?` Debt takes priority in ${debtBlocked} month${debtBlocked===1?'':'s'}.`:''}${cashBlocked?` Living costs or the hard floor constrain ${cashBlocked} month${cashBlocked===1?'':'s'}.`:''}${sweepText}`;
+
+    document.getElementById('savingsMonthlyTable').innerHTML=plan.months.length
+      ? plan.months.map(m=>{
+          const cls=m.shortfall<=.01?'good':m.contributed>0||m.swept>0?'warn':'bad';
+          const response=m.reasons.length?m.reasons.join('; '):m.shortfall<=.01?'Target met without violating reserves':'No contribution opportunity';
+          return `<tr><td>${monthLabel(m.key)}</td><td>${money2(m.target)}</td><td>${money2(m.contributed)}</td><td>${money2(m.swept)}</td><td>${money2(m.shortfall)}</td><td>${money2(m.essential)}</td><td>${money2(m.flexible)}</td><td><span class="savings-status ${cls}">${m.status}</span><div class="muted small" style="margin-top:5px">${escapeHtml(response)}</div></td></tr>`;
+        }).join('')
+      : '<tr><td colspan="8" class="muted">No forecast months available.</td></tr>';
   }
+
   function renderBills() {
     document.getElementById('billTable').innerHTML=state.bills.map(b=>{const debt=state.debts.find(d=>d.id===b.debtId);return `<tr><td>${escapeHtml(b.name)}${b.autoGenerated?' <span class="pill">Auto</span>':''}${!b.active?' <span class="muted">(off)</span>':''}</td><td>${scheduleLabel(b)}</td><td>${money2(b.amount,b.currency)}</td><td>${escapeHtml(b.category)}</td><td>${debt?escapeHtml(debt.name):'—'}</td><td><button class="btn sm secondary" data-action="edit-bill" data-id="${b.id}">Edit</button> <button class="btn sm danger" data-action="delete-bill" data-id="${b.id}">Delete</button></td></tr>`}).join('');
   }
@@ -1641,8 +2344,14 @@
 
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='dashboard')setTimeout(()=>renderDashboard(),20);}));
   document.getElementById('headerTarget').addEventListener('change',e=>{state.settings.targetDate=e.target.value;renderAll();});
-  window.addEventListener('resize',()=>{if(document.getElementById('dashboard').classList.contains('active'))drawCashChart(getSummary());});
+  window.addEventListener('resize',()=>{if(document.getElementById('dashboard').classList.contains('active')){const summary=getSummary();drawCashChart(summary);const months=buildMonthlySpendingRoom(summary);const selected=months.find(m=>m.key===selectedMonthlyRoomKey)||months[0];if(selected)drawMonthlyAllocationChart(selected);}});
   document.getElementById('chartModeToggle').addEventListener('click',e=>{const btn=e.target.closest('[data-chart-mode]');if(!btn)return;state.savings={...defaultState.savings,...state.savings,chartMode:btn.dataset.chartMode};renderDashboard();saveState();});
+  setupChartInteractions();
+  setupMonthlyAllocationInteractions();
+  document.getElementById('monthlyRoomSelect').addEventListener('change',e=>{selectedMonthlyRoomKey=e.target.value;renderMonthlySpendingRoom(getSummary());});
+  document.getElementById('monthlyRoomPrev').addEventListener('click',()=>{const months=buildMonthlySpendingRoom(getSummary());const i=months.findIndex(m=>m.key===selectedMonthlyRoomKey);if(i>0){selectedMonthlyRoomKey=months[i-1].key;renderMonthlySpendingRoom(getSummary());}});
+  document.getElementById('monthlyRoomNext').addEventListener('click',()=>{const months=buildMonthlySpendingRoom(getSummary());const i=months.findIndex(m=>m.key===selectedMonthlyRoomKey);if(i>=0&&i<months.length-1){selectedMonthlyRoomKey=months[i+1].key;renderMonthlySpendingRoom(getSummary());}});
+  document.getElementById('monthlyRoomStrip').addEventListener('click',e=>{const btn=e.target.closest('[data-month-room]');if(!btn)return;selectedMonthlyRoomKey=btn.dataset.monthRoom;renderMonthlySpendingRoom(getSummary());});
 
   document.getElementById('debtSummaryToggle').addEventListener('click',()=>{
     debtBreakdownOpen=!debtBreakdownOpen;
@@ -1669,7 +2378,7 @@
   };
   document.getElementById('savingsReturnPreset').addEventListener('change',()=>{if(savingsReturnPreset.value!=='custom')applySavingsPreset();});
   ['savingsExpectedReturn','savingsVolatility'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(document.activeElement===document.getElementById(id))savingsReturnPreset.value='custom';}));
-  document.getElementById('savingsForm').addEventListener('submit',e=>{e.preventDefault();state.savings={...state.savings,enabled:savingsEnabled.checked,monthlyTarget:Math.max(0,Number(savingsMonthlyTarget.value)||0),startingBalance:Math.max(0,Number(savingsStartingBalance.value)||0),timing:savingsTiming.value,cashFloor:Math.max(0,Number(savingsCashFloor.value)||0),essentialBufferPct:Math.max(0,Number(savingsEssentialBuffer.value)||0),debtFirstApr:Math.max(0,Number(savingsDebtFirstApr.value)||0),minimumWhileDebt:Math.max(0,Number(savingsMinimumWhileDebt.value)||0),returnPreset:savingsReturnPreset.value,expectedReturn:Number(savingsExpectedReturn.value)||0,volatility:Math.max(0,Number(savingsVolatility.value)||0)};renderAll();});
+  document.getElementById('savingsForm').addEventListener('submit',e=>{e.preventDefault();state.savings={...state.savings,enabled:savingsEnabled.checked,monthlyTarget:Math.max(0,Number(savingsMonthlyTarget.value)||0),startingBalance:Math.max(0,Number(savingsStartingBalance.value)||0),timing:savingsTiming.value,cashFloor:Math.max(0,Number(savingsCashFloor.value)||0),cashCeiling:Math.max(0,Number(savingsCashCeiling.value)||0),sweepExcess:savingsSweepExcess.checked,essentialBufferPct:Math.max(0,Number(savingsEssentialBuffer.value)||0),debtFirstApr:Math.max(0,Number(savingsDebtFirstApr.value)||0),minimumWhileDebt:Math.max(0,Number(savingsMinimumWhileDebt.value)||0),returnPreset:savingsReturnPreset.value,expectedReturn:Number(savingsExpectedReturn.value)||0,volatility:Math.max(0,Number(savingsVolatility.value)||0)};renderAll();});
   document.getElementById('savingsEnabled').addEventListener('change',()=>{state.savings={...defaultState.savings,...state.savings,enabled:savingsEnabled.checked};renderAll();});
   document.getElementById('rebuildIntegratedPlan').addEventListener('click',()=>{document.getElementById('generateAvalanche').click();setTimeout(()=>{document.querySelector('[data-tab="savings"]').click();renderSavings();},0);});
   document.getElementById('billForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('billId').value||uid('bill');const obj={id,name:billName.value,startDate:billStart.value,endDate:billEnd.value,recurrence:billRecurrence.value,amount:Number(billAmount.value),currency:billCurrency.value,category:billCategory.value,debtId:billDebtId.value,active:billActive.checked,autoGenerated:false};const idx=state.bills.findIndex(x=>x.id===id);if(idx>=0)state.bills[idx]=obj;else state.bills.push(obj);clearBillForm();renderAll();});
