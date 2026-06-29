@@ -1,0 +1,54 @@
+name: Apply v6 deadline debt
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v6-deadline-debt.yml'
+      - 'scripts/apply_v6_deadline_debt.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply deadline debt migration
+        run: python scripts/apply_v6_deadline_debt.py
+
+      - name: Validate inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found')
+          Path('/tmp/financial-planner-v6.js').write_text(inline[-1], encoding='utf-8')
+          required = ['debtType','debtDeadlineDate','deadlineMarkupPct','continueAfterDeadline','accrueDebtEntry','debtPlannerRate']
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing v6 markers: {missing}')
+          PY
+          node --check /tmp/financial-planner-v6.js
+          grep -q "financial-planner-secure-v6-deadline-debt" service-worker.js
+
+      - name: Commit updated app
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No app changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Add deadline debt with missed-payment markup'
+          git push origin HEAD:main
