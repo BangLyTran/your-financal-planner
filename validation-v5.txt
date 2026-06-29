@@ -1,0 +1,2 @@
+Validated commit: 2a87245d2ccce1666de314febb30506f57657a06
+Validated features: debt breakdown, ledger debt balances, recurring minimum payments, USD/CAD current debt total
