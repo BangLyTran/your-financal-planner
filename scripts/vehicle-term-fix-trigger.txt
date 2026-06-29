@@ -1,0 +1,1 @@
+Run the v11 vehicle-loan term migration and validate that a 48-month loan produces exactly 48 payments.
