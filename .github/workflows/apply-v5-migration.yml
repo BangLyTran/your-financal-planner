@@ -1,0 +1,35 @@
+name: Apply v5 debt details migration
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v5-migration.yml'
+      - 'scripts/apply_v5_debt_details.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python scripts/apply_v5_debt_details.py
+
+      - name: Commit migrated app
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No app changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Add debt details, minimum payments, and current debt totals'
+          git push origin HEAD:main
