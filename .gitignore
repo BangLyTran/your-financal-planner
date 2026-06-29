@@ -1,0 +1,12 @@
+# Local editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Secrets (never commit service-role or OAuth provider secrets)
+.env
+.env.*
+*.p8

@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial Forecast Planner</title>
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Money Planner" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #182230;
+      --muted: #64748b;
+      --line: #dce3ec;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --good: #07835d;
+      --warn: #b45309;
+      --bad: #c62828;
+      --soft: #eef4ff;
+      --shadow: 0 12px 30px rgba(24, 34, 48, 0.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; }
+    header {
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: white;
+      padding: 26px 28px 22px;
+    }
+    .header-row {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: clamp(1.45rem, 3vw, 2.25rem); }
+    .subtitle { margin-top: 7px; color: #cbd5e1; font-size: 0.96rem; }
+    .target-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,.1);
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+    }
+    .target-box input { color-scheme: dark; }
+    nav {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 14px 28px 0;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 14px;
+      border-radius: 10px;
+      white-space: nowrap;
+      font-weight: 650;
+    }
+    .tab-btn.active { background: var(--panel); color: var(--accent); box-shadow: var(--shadow); }
+    main { max-width: 1440px; margin: 0 auto; padding: 20px 28px 48px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .grid { display: grid; gap: 16px; }
+    .cards { grid-template-columns: repeat(5, minmax(170px, 1fr)); }
+    .two { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); }
+    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card { padding: 18px; min-height: 132px; }
+    .card .label { color: var(--muted); font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .card .value { font-size: clamp(1.35rem, 2.5vw, 2rem); margin-top: 10px; font-weight: 800; }
+    .card .detail { margin-top: 8px; color: var(--muted); font-size: .86rem; }
+    .positive { color: var(--good); }
+    .negative { color: var(--bad); }
+    .warning { color: var(--warn); }
+    .panel { padding: 20px; }
+    .panel + .panel { margin-top: 16px; }
+    .panel h2, .panel h3 { margin: 0 0 14px; }
+    .panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .muted { color: var(--muted); }
+    .small { font-size: .84rem; }
+    canvas { width: 100%; height: 330px; display: block; }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--line); font-size: .9rem; }
+    th { position: sticky; top: 0; background: #f8fafc; color: #475569; z-index: 1; }
+    tr:last-child td { border-bottom: 0; }
+    .amount.in { color: var(--good); font-weight: 700; }
+    .amount.out { color: var(--bad); font-weight: 700; }
+    form .form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    label { display: block; color: #475569; font-size: .8rem; font-weight: 700; margin-bottom: 5px; }
+    input, select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 11px;
+      background: white;
+      color: var(--text);
+      min-height: 42px;
+    }
+    input[type="checkbox"] { width: auto; min-height: auto; }
+    .check-row { display: flex; align-items: center; gap: 8px; min-height: 42px; }
+    .actions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      background: var(--accent);
+      color: white;
+    }
+    .btn:hover { background: var(--accent-2); }
+    .btn.secondary { background: #e2e8f0; color: #243244; }
+    .btn.danger { background: #fee2e2; color: #991b1b; }
+    .btn.good { background: #dcfce7; color: #166534; }
+    .btn.sm { padding: 7px 9px; font-size: .8rem; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 8px; background: #eef2ff; color: #3730a3; font-size: .76rem; font-weight: 700; }
+    .notice { padding: 12px 14px; border-radius: 12px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; margin-bottom: 16px; }
+    .notice.warn { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+    .notice.bad { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .metric-list { display: grid; gap: 10px; }
+    .metric-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 9px; }
+    .metric-row:last-child { border-bottom: 0; }
+    .debt-bar { margin: 9px 0 15px; }
+    .bar-bg { height: 9px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--accent); }
+    .switch { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+    .switch input { width: 44px; height: 24px; accent-color: var(--accent); }
+    .footer-note { margin-top: 20px; color: var(--muted); font-size: .79rem; line-height: 1.5; }
+    .hidden { display: none !important; }
+    .scenario-card { border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; padding: 16px; }
+    .kpi { font-size: 1.35rem; font-weight: 800; }
+    .inline-controls { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+    .inline-controls > div { min-width: 140px; }
+    .cloud-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #dbeafe;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+    .cloud-dot { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,.18); }
+    .cloud-dot.synced { background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.18); }
+    .cloud-dot.syncing { background: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,.18); }
+    .cloud-dot.error { background: #fb7185; box-shadow: 0 0 0 3px rgba(251,113,133,.18); }
+    .auth-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .auth-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-width: 190px; }
+    .auth-btn.google { background: #fff; color: #1f2937; border: 1px solid #cbd5e1; }
+    .auth-btn.apple { background: #000; color: #fff; }
+    .sync-status-box { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .config-warning { margin-top: 10px; font-size: .8rem; color: var(--warn); }
+    .danger-text { color: var(--bad); }
+
+    @media (max-width: 1100px) {
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two, .three { grid-template-columns: 1fr; }
+      form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+      header, main, nav { padding-left: 14px; padding-right: 14px; }
+      .cards, form .form-grid { grid-template-columns: 1fr; }
+      .target-box { width: 100%; }
+      .target-box input { flex: 1; }
+      .card { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-row">
+      <div>
+        <h1>Financial Forecast Planner</h1>
+        <div class="subtitle">Cash-flow forecasting, Texas take-home estimates, recurring bills, debt planning, and vehicle scenarios.</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div class="cloud-chip" id="cloudHeaderChip" title="Cloud sync status">
+          <span class="cloud-dot" id="cloudHeaderDot"></span>
+          <span id="cloudHeaderText">Local only</span>
+        </div>
+        <div class="target-box">
+          <label for="headerTarget" style="margin:0;color:#dbeafe">Forecast date</label>
+          <input id="headerTarget" type="date" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="income">Income</button>
+    <button class="tab-btn" data-tab="bills">Bills & payments</button>
+    <button class="tab-btn" data-tab="debts">Debts</button>
+    <button class="tab-btn" data-tab="vehicle">Vehicle scenario</button>
+    <button class="tab-btn" data-tab="settings">Settings & data</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="tab active">
+      <div id="riskNotice"></div>
+      <div class="grid cards">
+        <div class="card">
+          <div class="label">Cash on target date</div>
+          <div class="value" id="cashTarget">$0</div>
+          <div class="detail" id="cashTargetDetail"></div>
+        </div>
+        <div class="card">
+          <div class="label">Net income received</div>
+          <div class="value positive" id="netIncome">$0</div>
+          <div class="detail" id="grossIncomeDetail"></div>
+        </div>
+        <div class="card">
+          <div class="label">Cash outflows</div>
+          <div class="value negative" id="cashOutflows">$0</div>
+          <div class="detail" id="outflowDetail"></div>
+        </div>
+        <div class="card">
+          <div class="label">Debt at target</div>
+          <div class="value warning" id="debtTarget">$0</div>
+          <div class="detail" id="debtInterestDetail"></div>
+        </div>
+        <div class="card">
+          <div class="label">Cash less debt</div>
+          <div class="value" id="netPosition">$0</div>
+          <div class="detail">Cash minus projected debt balances</div>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:16px">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Projected cash balance</h2>
+              <div class="muted small">Every income, bill, debt payment, and enabled vehicle cost through the target date.</div>
+            </div>
+          </div>
+          <canvas id="cashChart" width="1000" height="330"></canvas>
+        </div>
+        <div class="panel">
+          <h2>Planning snapshot</h2>
+          <div class="metric-list" id="snapshotMetrics"></div>
+          <div class="scenario-card" style="margin-top:16px">
+            <div class="muted small">CPO GLE scenario</div>
+            <div class="kpi" id="vehicleScenarioSummary">Not included</div>
+            <div class="small muted" id="vehicleScenarioDetail"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head">
+          <div>
+            <h2>Forecast ledger</h2>
+            <div class="muted small">Use this to see exactly why the balance changes on each date.</div>
+          </div>
+          <button class="btn secondary" id="downloadCsv">Download ledger CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Amount</th><th>Running cash</th></tr></thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="income" class="tab">
+      <div class="panel">
+        <h2>Add or edit income</h2>
+        <div class="notice">Regular income uses a 2026 single-filer annualized federal estimate, payroll taxes, Texas 0% state income tax, and editable pre-tax deductions. Enter a net override once the real deposit is known.</div>
+        <form id="incomeForm">
+          <input type="hidden" id="incomeId" />
+          <div class="form-grid">
+            <div><label>Name</label><input id="incomeName" required placeholder="Biweekly salary" /></div>
+            <div><label>First date</label><input id="incomeStart" type="date" required /></div>
+            <div><label>End date</label><input id="incomeEnd" type="date" /></div>
+            <div><label>Recurrence</label><select id="incomeRecurrence"><option value="none">One time</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select></div>
+            <div><label>Gross amount</label><input id="incomeGross" type="number" step="0.01" min="0" required /></div>
+            <div><label>Currency</label><select id="incomeCurrency"><option>USD</option><option>CAD</option></select></div>
+            <div><label>Tax method</label><select id="incomeTaxMode"><option value="regular">Regular payroll estimate</option><option value="supplemental">Bonus: flat supplemental rate</option><option value="none">No tax calculation</option></select></div>
+            <div><label>Pre-tax deduction per payment</label><input id="incomePretax" type="number" step="0.01" min="0" value="0" /></div>
+            <div><label>Net override (optional)</label><input id="incomeNetOverride" type="number" step="0.01" min="0" placeholder="Actual bank deposit" /></div>
+            <div><label>Active</label><div class="check-row"><input id="incomeActive" type="checkbox" checked /> Include in forecast</div></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save income</button><button class="btn secondary" type="button" id="clearIncome">Clear form</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Income schedules</h2>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Schedule</th><th>Gross</th><th>Estimated net</th><th>Method</th><th>Actions</th></tr></thead><tbody id="incomeTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="bills" class="tab">
+      <div class="panel">
+        <h2>Add or edit a bill</h2>
+        <form id="billForm">
+          <input type="hidden" id="billId" />
+          <div class="form-grid">
+            <div><label>Name</label><input id="billName" required placeholder="Rent, groceries, utilities..." /></div>
+            <div><label>First due date</label><input id="billStart" type="date" required /></div>
+            <div><label>End date</label><input id="billEnd" type="date" /></div>
+            <div><label>Recurrence</label><select id="billRecurrence"><option value="none">One time</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select></div>
+            <div><label>Amount</label><input id="billAmount" type="number" step="0.01" min="0" required /></div>
+            <div><label>Currency</label><select id="billCurrency"><option>USD</option><option>CAD</option></select></div>
+            <div><label>Category</label><select id="billCategory"><option>Housing</option><option>Food</option><option>Transportation</option><option>Utilities</option><option>Health</option><option>Debt payment</option><option>Discretionary</option><option>Other</option></select></div>
+            <div><label>Apply to debt</label><select id="billDebtId"><option value="">None</option></select></div>
+            <div><label>Active</label><div class="check-row"><input id="billActive" type="checkbox" checked /> Include in forecast</div></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save bill</button><button class="btn secondary" type="button" id="clearBill">Clear form</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Bills and scheduled payments</h2>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Schedule</th><th>Amount</th><th>Category</th><th>Debt</th><th>Actions</th></tr></thead><tbody id="billTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="debts" class="tab">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Debt payoff assistant</h2>
+            <div class="muted small">Generates payments on paydays using the highest APR first while preserving a cash floor and enough money for bills until the next paycheck.</div>
+          </div>
+        </div>
+        <div class="inline-controls">
+          <div><label>Minimum cash floor</label><input id="planCashFloor" type="number" step="100" value="2500" /></div>
+          <div><label>Maximum per payday</label><input id="planMaxPayment" type="number" step="100" value="5000" /></div>
+          <div><button class="btn good" id="generateAvalanche">Generate avalanche payments</button></div>
+          <div><button class="btn danger" id="removeAutoPayments">Remove generated payments</button></div>
+        </div>
+        <div class="footer-note">The generated plan is a scenario, not an instruction to overdraft. Review the ledger before making real payments.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Add or edit debt</h2>
+        <form id="debtForm">
+          <input type="hidden" id="debtId" />
+          <div class="form-grid">
+            <div><label>Name</label><input id="debtName" required /></div>
+            <div><label>Opening balance</label><input id="debtBalance" type="number" step="0.01" min="0" required /></div>
+            <div><label>Currency</label><select id="debtCurrency"><option>USD</option><option>CAD</option></select></div>
+            <div><label>APR %</label><input id="debtApr" type="number" step="0.01" min="0" required /></div>
+            <div><label>Minimum monthly payment</label><input id="debtMinimum" type="number" step="0.01" min="0" value="0" /></div>
+            <div><label>Deferred until</label><input id="debtDeferredUntil" type="date" /></div>
+            <div><label>Revolving/high-interest</label><div class="check-row"><input id="debtRevolving" type="checkbox" checked /> Include in high-interest total</div></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save debt</button><button class="btn secondary" type="button" id="clearDebt">Clear form</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Projected debt balances</h2>
+        <div id="debtCards" class="grid three"></div>
+        <div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>Debt</th><th>Opening</th><th>APR</th><th>Payments by target</th><th>Interest accrued</th><th>Projected balance</th><th>Actions</th></tr></thead><tbody id="debtTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="vehicle" class="tab">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>CPO GLE scenario</h2>
+            <div class="muted small">Toggle this scenario on to add down payment, loan payments, insurance, fuel, and a maintenance reserve to the forecast.</div>
+          </div>
+          <label class="switch"><input id="vehicleEnabled" type="checkbox" /> Include vehicle</label>
+        </div>
+        <form id="vehicleForm">
+          <div class="form-grid">
+            <div><label>Purchase date</label><input id="vehiclePurchaseDate" type="date" /></div>
+            <div><label>Advertised price</label><input id="vehiclePrice" type="number" step="0.01" /></div>
+            <div><label>Sales tax %</label><input id="vehicleTaxRate" type="number" step="0.01" /></div>
+            <div><label>Other title/registration fees</label><input id="vehicleFees" type="number" step="0.01" /></div>
+            <div><label>Cash down payment</label><input id="vehicleDown" type="number" step="0.01" /></div>
+            <div><label>APR %</label><input id="vehicleApr" type="number" step="0.01" /></div>
+            <div><label>Loan term, months</label><input id="vehicleTerm" type="number" step="1" /></div>
+            <div><label>First payment date</label><input id="vehicleFirstPayment" type="date" /></div>
+            <div><label>Monthly insurance</label><input id="vehicleInsurance" type="number" step="0.01" /></div>
+            <div><label>Monthly fuel/tolls</label><input id="vehicleFuel" type="number" step="0.01" /></div>
+            <div><label>Monthly maintenance reserve</label><input id="vehicleMaintenance" type="number" step="0.01" /></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save vehicle scenario</button></div>
+        </form>
+      </div>
+      <div class="grid three" style="margin-top:16px">
+        <div class="card"><div class="label">Estimated out-the-door</div><div class="value" id="vehicleOtd">$0</div><div class="detail">Price + sales tax + fees</div></div>
+        <div class="card"><div class="label">Amount financed</div><div class="value" id="vehicleFinanced">$0</div><div class="detail">After cash down payment</div></div>
+        <div class="card"><div class="label">Estimated monthly loan</div><div class="value" id="vehicleMonthly">$0</div><div class="detail" id="vehicleAllIn"></div></div>
+      </div>
+    </section>
+
+    <section id="settings" class="tab">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Cloud sync and sign-in</h2>
+            <div class="muted small">Use the same account on iPhone, iPad, Mac, and Windows. Local storage remains available offline.</div>
+          </div>
+          <span class="pill" id="cloudAccountPill">Not signed in</span>
+        </div>
+        <div class="notice">
+          Cloud sync requires this app to be hosted at an HTTPS web address. The Supabase publishable/anon key is safe to use in a browser when Row Level Security is enabled. Never enter a service-role key here.
+        </div>
+        <div class="notice warn">
+          This deployable app intentionally contains no personal financial data in its public source. After signing in, import the separate private starter JSON once; it will then sync to your private user row.
+        </div>
+        <form id="cloudConfigForm">
+          <div class="form-grid">
+            <div style="grid-column:span 2"><label>Supabase project URL</label><input id="supabaseProjectUrl" type="url" placeholder="https://your-project.supabase.co" autocomplete="off" /></div>
+            <div style="grid-column:span 2"><label>Supabase publishable or anon key</label><input id="supabaseAnonKey" type="password" placeholder="sb_publishable_... or eyJ..." autocomplete="off" /></div>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" type="submit">Save cloud configuration</button>
+            <button class="btn secondary" type="button" id="showCloudKey">Show key</button>
+          </div>
+        </form>
+        <div class="auth-buttons">
+          <button class="btn auth-btn google" id="signInGoogle" type="button"><strong>G</strong> Sign in with Google</button>
+          <button class="btn auth-btn apple" id="signInApple" type="button"><strong>●</strong> Sign in with Apple</button>
+          <button class="btn secondary hidden" id="signOutCloud" type="button">Sign out</button>
+        </div>
+        <div class="sync-status-box" id="emailAuthBox">
+          <strong>Email sign-in fallback</strong>
+          <div class="small muted" style="margin:4px 0 10px">Works before Google or Apple OAuth is configured. A secure sign-in link is sent to your email.</div>
+          <div class="inline-controls">
+            <div style="min-width:min(360px,100%);flex:1"><label>Email address</label><input id="magicLinkEmail" type="email" placeholder="you@example.com" autocomplete="email" /></div>
+            <button class="btn secondary" id="signInEmail" type="button">Email me a sign-in link</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn good" id="syncNow" type="button">Sync now</button>
+          <button class="btn secondary" id="pullCloud" type="button">Use cloud copy</button>
+          <button class="btn secondary" id="pushCloud" type="button">Upload this device</button>
+        </div>
+        <div class="sync-status-box">
+          <strong id="cloudStatusTitle">Local mode</strong>
+          <div class="small muted" id="cloudStatusDetail">Configure Supabase and sign in to enable cross-device sync.</div>
+        </div>
+        <div class="config-warning">Use the same account on every device. Apple “Hide My Email” may use a relay address; do not alternate between that Apple identity and a different Google/email identity unless they share the exact same email.</div>
+      </div>
+      <div class="panel">
+        <h2>Forecast and tax assumptions</h2>
+        <form id="settingsForm">
+          <div class="form-grid">
+            <div><label>Forecast start date</label><input id="forecastStart" type="date" /></div>
+            <div><label>Target date</label><input id="targetDate" type="date" /></div>
+            <div><label>Starting available cash</label><input id="startingCash" type="number" step="0.01" /></div>
+            <div><label>CAD per USD</label><input id="cadPerUsd" type="number" step="0.0001" /></div>
+            <div><label>Pay periods per year</label><input id="payPeriods" type="number" step="1" /></div>
+            <div><label>2026 standard deduction</label><input id="standardDeduction" type="number" step="1" /></div>
+            <div><label>Social Security rate %</label><input id="ssRate" type="number" step="0.01" /></div>
+            <div><label>Medicare rate %</label><input id="medicareRate" type="number" step="0.01" /></div>
+            <div><label>Social Security wage base</label><input id="ssWageBase" type="number" step="1" /></div>
+            <div><label>Texas state income tax %</label><input id="stateTaxRate" type="number" step="0.01" /></div>
+            <div><label>Supplemental wage withholding %</label><input id="supplementalRate" type="number" step="0.01" /></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save settings</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Data controls</h2>
+        <div class="actions">
+          <button class="btn secondary" id="exportJson">Export backup</button>
+          <label class="btn secondary" for="importJson" style="display:inline-flex;align-items:center">Import backup</label>
+          <input id="importJson" type="file" accept="application/json" class="hidden" />
+          <button class="btn danger" id="resetData">Reset to blank plan</button>
+        </div>
+        <div class="footer-note">
+          Your data is always stored locally in this browser. When cloud sync is configured and you are signed in, a private user-specific copy is also stored in Supabase and synchronized across devices. The tax engine is an estimate for planning and is not payroll, legal, or tax advice. Employer withholding can differ due to W-4 details, payroll treatment, benefit taxability, nonresident-alien rules, and partial-year residency.
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="cloud-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  const STORAGE_KEY = 'bangFinancialPlannerV1';
+  const CLOUD_CONFIG_KEY = 'bangFinancialPlannerCloudConfigV1';
+  const SYNC_META_KEY = 'bangFinancialPlannerSyncMetaV1';
+  const clone = obj => JSON.parse(JSON.stringify(obj));
+  const uid = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const isoToday = '2026-06-29';
+
+  const defaultState = {
+    settings: {
+      forecastStart: isoToday,
+      targetDate: '2026-08-31',
+      startingCash: 0,
+      cadPerUsd: 1.42,
+      payPeriods: 26,
+      standardDeduction: 16100,
+      ssRate: 6.2,
+      medicareRate: 1.45,
+      ssWageBase: 184500,
+      stateTaxRate: 0,
+      supplementalRate: 22
+    },
+    incomes: [],
+    bills: [],
+    debts: [],
+    vehicle: {
+      enabled:false,
+      purchaseDate:'2026-07-25',
+      price:0,
+      taxRate:6.25,
+      fees:250,
+      downPayment:0,
+      apr:10,
+      termMonths:60,
+      firstPaymentDate:'2026-08-25',
+      insuranceMonthly:0,
+      fuelMonthly:0,
+      maintenanceMonthly:0
+    }
+  };
+
+  let state = loadState();
+  let syncMeta = loadSyncMeta();
+  let supabaseClient = null;
+  let cloudSession = null;
+  let cloudSaveTimer = null;
+  let cloudPollTimer = null;
+  let authSubscription = null;
+  let applyingCloudState = false;
+  let cloudBusy = false;
+  let reconcilingCloud = false;
+
+  function normalizeState(parsed) {
+    return Object.assign(clone(defaultState), parsed || {}, {
+      settings: Object.assign({}, defaultState.settings, parsed?.settings || {}),
+      vehicle: Object.assign({}, defaultState.vehicle, parsed?.vehicle || {}),
+      incomes: Array.isArray(parsed?.incomes) ? parsed.incomes : clone(defaultState.incomes),
+      bills: Array.isArray(parsed?.bills) ? parsed.bills : clone(defaultState.bills),
+      debts: Array.isArray(parsed?.debts) ? parsed.debts : clone(defaultState.debts)
+    });
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? normalizeState(JSON.parse(raw)) : clone(defaultState);
+    } catch { return clone(defaultState); }
+  }
+  function hashText(text) {
+    let h = 2166136261;
+    for (let i=0;i<text.length;i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(16);
+  }
+  function stateHash(value=state) { return hashText(JSON.stringify(value)); }
+  function loadSyncMeta() {
+    try { return JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function saveSyncMeta() { localStorage.setItem(SYNC_META_KEY, JSON.stringify(syncMeta)); }
+  function saveState(options={}) {
+    const serialized = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    const nextHash = hashText(serialized);
+    if (syncMeta.lastLocalHash !== nextHash) {
+      syncMeta.lastLocalHash = nextHash;
+      syncMeta.localModifiedAt = new Date().toISOString();
+      saveSyncMeta();
+      if (!options.skipCloud && !applyingCloudState) scheduleCloudPush();
+    }
+  }
+
+
+  function loadCloudConfig() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}'); } catch {}
+    const embedded = window.FINANCIAL_PLANNER_CLOUD_CONFIG || {};
+    const embeddedUrl = String(embedded.supabaseUrl || '').trim();
+    const embeddedKey = String(embedded.supabasePublishableKey || embedded.supabaseAnonKey || '').trim();
+    return {
+      supabaseUrl: embeddedUrl && !embeddedUrl.includes('PASTE_') ? embeddedUrl : String(saved.supabaseUrl || '').trim(),
+      supabaseKey: embeddedKey && !embeddedKey.includes('PASTE_') ? embeddedKey : String(saved.supabaseKey || '').trim()
+    };
+  }
+  function saveCloudConfig(config) {
+    localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(config));
+  }
+  function validCloudConfig(config=loadCloudConfig()) {
+    return /^https:\/\/.+\.supabase\.co\/?$/i.test(config.supabaseUrl) && config.supabaseKey.length > 20;
+  }
+  function setCloudStatus(mode, title, detail) {
+    const dot = document.getElementById('cloudHeaderDot');
+    const header = document.getElementById('cloudHeaderText');
+    const titleEl = document.getElementById('cloudStatusTitle');
+    const detailEl = document.getElementById('cloudStatusDetail');
+    if (dot) dot.className = `cloud-dot ${mode || ''}`.trim();
+    if (header) header.textContent = title;
+    if (titleEl) titleEl.textContent = title;
+    if (detailEl) detailEl.textContent = detail || '';
+  }
+  function renderCloudAccount() {
+    const pill = document.getElementById('cloudAccountPill');
+    const signOut = document.getElementById('signOutCloud');
+    const google = document.getElementById('signInGoogle');
+    const apple = document.getElementById('signInApple');
+    const emailBox = document.getElementById('emailAuthBox');
+    if (!pill) return;
+    if (cloudSession?.user) {
+      const email = cloudSession.user.email || 'Signed-in user';
+      pill.textContent = email;
+      signOut?.classList.remove('hidden');
+      google?.classList.add('hidden');
+      apple?.classList.add('hidden');
+      emailBox?.classList.add('hidden');
+    } else {
+      pill.textContent = 'Not signed in';
+      signOut?.classList.add('hidden');
+      google?.classList.remove('hidden');
+      apple?.classList.remove('hidden');
+      emailBox?.classList.remove('hidden');
+    }
+  }
+  function cloudRedirectUrl() {
+    if (location.protocol === 'file:') return '';
+    return `${location.origin}${location.pathname}`;
+  }
+  async function initializeCloud({reconcile=true}={}) {
+    const config = loadCloudConfig();
+    const urlField = document.getElementById('supabaseProjectUrl');
+    const keyField = document.getElementById('supabaseAnonKey');
+    if (urlField) urlField.value = config.supabaseUrl || '';
+    if (keyField) keyField.value = config.supabaseKey || '';
+    if (!validCloudConfig(config)) {
+      supabaseClient = null; cloudSession = null; renderCloudAccount();
+      setCloudStatus('', 'Local only', 'Add the Supabase project URL and publishable key to enable cloud sync.');
+      return;
+    }
+    if (!window.supabase?.createClient) {
+      setCloudStatus('error', 'Cloud library unavailable', 'Connect to the internet and reload the page. Local data is still safe.');
+      return;
+    }
+    try {
+      authSubscription?.unsubscribe?.();
+      supabaseClient = window.supabase.createClient(config.supabaseUrl.replace(/\/$/,''), config.supabaseKey, {
+        auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+      });
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      cloudSession = data.session;
+      renderCloudAccount();
+      const authResult = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        cloudSession = session;
+        renderCloudAccount();
+        if (event === 'SIGNED_OUT' || !session) {
+          setCloudStatus('', 'Local only', 'Signed out. Local planning data remains on this device.');
+          return;
+        }
+        if (['SIGNED_IN','INITIAL_SESSION','TOKEN_REFRESHED'].includes(event)) {
+          setCloudStatus('syncing', 'Connecting…', `Signed in as ${session.user.email || 'user'}.`);
+          if (event !== 'TOKEN_REFRESHED') await reconcileCloudOnSignIn();
+        }
+      });
+      authSubscription = authResult.data.subscription;
+      if (cloudSession && reconcile) await reconcileCloudOnSignIn();
+      else if (!cloudSession) setCloudStatus('', 'Ready to sign in', 'Choose Google or Apple to connect this device.');
+      if (cloudPollTimer) clearInterval(cloudPollTimer);
+      cloudPollTimer = setInterval(() => {
+        if (cloudSession && document.visibilityState === 'visible') syncNowCloud({quiet:true});
+      }, 30000);
+    } catch (error) {
+      console.error(error);
+      setCloudStatus('error', 'Cloud setup error', error.message || 'Could not initialize Supabase.');
+    }
+  }
+  async function signInCloud(provider) {
+    if (!supabaseClient) await initializeCloud({reconcile:false});
+    if (!supabaseClient) { setCloudStatus('error','Cloud not configured','Save a valid Supabase URL and publishable key first.'); return; }
+    const redirectTo = cloudRedirectUrl();
+    if (!redirectTo) {
+      setCloudStatus('error','Hosting required','OAuth cannot return to a local file. Deploy the app to an HTTPS URL first.');
+      return;
+    }
+    setCloudStatus('syncing', `Opening ${provider === 'google' ? 'Google' : 'Apple'}…`, 'You will return to the planner after signing in.');
+    const { error } = await supabaseClient.auth.signInWithOAuth({ provider, options:{ redirectTo } });
+    if (error) setCloudStatus('error','Sign-in failed',error.message);
+  }
+  async function signInWithEmailLink() {
+    if (!supabaseClient) await initializeCloud({reconcile:false});
+    if (!supabaseClient) { setCloudStatus('error','Cloud not configured','Save a valid Supabase URL and publishable key first.'); return; }
+    const email = String(document.getElementById('magicLinkEmail')?.value || '').trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setCloudStatus('error','Enter your email','Provide a valid email address for the secure sign-in link.');
+      return;
+    }
+    const redirectTo = cloudRedirectUrl();
+    if (!redirectTo) {
+      setCloudStatus('error','Hosting required','Email sign-in cannot return to a local file. Deploy the app to an HTTPS URL first.');
+      return;
+    }
+    setCloudStatus('syncing','Sending sign-in link…',`A secure link will be sent to ${email}.`);
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo, shouldCreateUser: true }
+    });
+    if (error) setCloudStatus('error','Email sign-in failed',error.message);
+    else setCloudStatus('synced','Check your email',`Open the sign-in link on this device to connect ${email}.`);
+  }
+  async function fetchCloudRow() {
+    if (!supabaseClient || !cloudSession?.user) return null;
+    const { data, error } = await supabaseClient.from('financial_plans')
+      .select('planner_state,updated_at')
+      .eq('user_id', cloudSession.user.id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+  async function pushCloudNow({quiet=false}={}) {
+    if (!supabaseClient || !cloudSession?.user || cloudBusy) return false;
+    cloudBusy = true;
+    if (!quiet) setCloudStatus('syncing','Uploading…','Saving this device’s latest plan to the cloud.');
+    try {
+      const payload = { user_id:cloudSession.user.id, planner_state:state };
+      const { data, error } = await supabaseClient.from('financial_plans')
+        .upsert(payload,{onConflict:'user_id'})
+        .select('updated_at')
+        .single();
+      if (error) throw error;
+      const h = stateHash();
+      syncMeta = { ...syncMeta, userId:cloudSession.user.id, lastSyncedHash:h, lastLocalHash:h, lastCloudUpdatedAt:data.updated_at, localModifiedAt:data.updated_at };
+      saveSyncMeta();
+      setCloudStatus('synced','Synced',`Latest changes saved ${new Date(data.updated_at).toLocaleString()}.`);
+      return true;
+    } catch (error) {
+      console.error(error);
+      setCloudStatus('error','Sync failed',`${error.message || 'Cloud upload failed.'} Local data remains saved.`);
+      return false;
+    } finally { cloudBusy = false; }
+  }
+  function applyCloudState(row) {
+    applyingCloudState = true;
+    state = normalizeState(row.planner_state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const h = stateHash();
+    syncMeta = { ...syncMeta, userId:cloudSession.user.id, lastSyncedHash:h, lastLocalHash:h, lastCloudUpdatedAt:row.updated_at, localModifiedAt:row.updated_at };
+    saveSyncMeta();
+    renderAll();
+    applyingCloudState = false;
+    setCloudStatus('synced','Synced',`Cloud plan loaded ${new Date(row.updated_at).toLocaleString()}.`);
+  }
+  async function pullCloudNow({force=false,quiet=false}={}) {
+    if (!supabaseClient || !cloudSession?.user || cloudBusy) return false;
+    cloudBusy = true;
+    if (!quiet) setCloudStatus('syncing','Downloading…','Checking the cloud for the latest plan.');
+    try {
+      const row = await fetchCloudRow();
+      if (!row) {
+        cloudBusy = false;
+        return pushCloudNow({quiet});
+      }
+      const cloudHash = stateHash(row.planner_state);
+      if (!force && cloudHash === stateHash()) {
+        syncMeta = { ...syncMeta, userId:cloudSession.user.id, lastSyncedHash:cloudHash, lastCloudUpdatedAt:row.updated_at };
+        saveSyncMeta();
+        setCloudStatus('synced','Synced','This device already has the latest cloud plan.');
+        return true;
+      }
+      applyCloudState(row);
+      return true;
+    } catch (error) {
+      console.error(error);
+      setCloudStatus('error','Sync failed',`${error.message || 'Cloud download failed.'} Local data remains saved.`);
+      return false;
+    } finally { cloudBusy = false; }
+  }
+  async function reconcileCloudOnSignIn() {
+    if (!cloudSession?.user || cloudBusy || reconcilingCloud) return;
+    reconcilingCloud = true;
+    setCloudStatus('syncing','Syncing…','Comparing this device with your cloud plan.');
+    try {
+      const row = await fetchCloudRow();
+      if (!row) { await pushCloudNow(); return; }
+      const localHash = stateHash();
+      const cloudHash = stateHash(row.planner_state);
+      if (localHash === cloudHash) {
+        syncMeta = { ...syncMeta, userId:cloudSession.user.id, lastSyncedHash:localHash, lastLocalHash:localHash, lastCloudUpdatedAt:row.updated_at };
+        saveSyncMeta();
+        setCloudStatus('synced','Synced','This device and the cloud already match.');
+        return;
+      }
+      const sameAccount = syncMeta.userId === cloudSession.user.id;
+      const localDirty = sameAccount && syncMeta.lastSyncedHash && localHash !== syncMeta.lastSyncedHash;
+      const cloudDirty = sameAccount && syncMeta.lastSyncedHash && cloudHash !== syncMeta.lastSyncedHash;
+      if (!sameAccount || !syncMeta.lastSyncedHash) {
+        const localIsDefault = localHash === stateHash(defaultState);
+        if (localIsDefault) { applyCloudState(row); return; }
+        const useCloud = confirm('A cloud plan already exists. Press OK to use the cloud copy on this device. Press Cancel to upload this device and replace the cloud copy.');
+        if (useCloud) applyCloudState(row); else await pushCloudNow();
+        return;
+      }
+      if (cloudDirty && !localDirty) { applyCloudState(row); return; }
+      if (localDirty && !cloudDirty) { await pushCloudNow(); return; }
+      if (cloudDirty && localDirty) {
+        const cloudTime = Date.parse(row.updated_at || 0);
+        const localTime = Date.parse(syncMeta.localModifiedAt || 0);
+        if (cloudTime > localTime) applyCloudState(row); else await pushCloudNow();
+        return;
+      }
+      applyCloudState(row);
+    } catch (error) {
+      console.error(error);
+      setCloudStatus('error','Sync failed',`${error.message || 'Could not compare cloud data.'} Check the SQL table and RLS policies.`);
+    } finally {
+      reconcilingCloud = false;
+    }
+  }
+  async function syncNowCloud({quiet=false}={}) {
+    if (!supabaseClient || !cloudSession?.user || cloudBusy) return;
+    try {
+      const row = await fetchCloudRow();
+      if (!row) { await pushCloudNow({quiet}); return; }
+      const localHash = stateHash();
+      const cloudHash = stateHash(row.planner_state);
+      if (localHash === cloudHash) {
+        syncMeta = { ...syncMeta, userId:cloudSession.user.id, lastSyncedHash:localHash, lastCloudUpdatedAt:row.updated_at };
+        saveSyncMeta();
+        if (!quiet) setCloudStatus('synced','Synced','No changes to upload or download.');
+        return;
+      }
+      const localDirty = localHash !== syncMeta.lastSyncedHash;
+      const cloudDirty = cloudHash !== syncMeta.lastSyncedHash;
+      if (cloudDirty && !localDirty) applyCloudState(row);
+      else if (localDirty && !cloudDirty) await pushCloudNow({quiet});
+      else {
+        const cloudTime = Date.parse(row.updated_at || 0);
+        const localTime = Date.parse(syncMeta.localModifiedAt || 0);
+        if (cloudTime > localTime) applyCloudState(row); else await pushCloudNow({quiet});
+      }
+    } catch (error) {
+      if (!quiet) setCloudStatus('error','Sync failed',error.message || 'Could not synchronize.');
+    }
+  }
+  function scheduleCloudPush() {
+    if (!cloudSession?.user || !supabaseClient || applyingCloudState) return;
+    clearTimeout(cloudSaveTimer);
+    setCloudStatus('syncing','Unsynced changes','Changes are saved locally and will upload shortly.');
+    cloudSaveTimer = setTimeout(() => pushCloudNow({quiet:true}), 1200);
+  }
+
+  function parseDate(s) { return new Date(`${s}T00:00:00`); }
+  function toISO(d) { return d.toISOString().slice(0,10); }
+  function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate()+days); return d; }
+  function addMonths(date, months) { const d = new Date(date); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); const last = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); d.setDate(Math.min(day,last)); return d; }
+  function daysBetween(a,b) { return Math.max(0,(parseDate(b)-parseDate(a))/86400000); }
+  function money(v, currency='USD') { return new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:0}).format(Number(v)||0); }
+  function money2(v, currency='USD') { return new Intl.NumberFormat('en-US',{style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v)||0); }
+  function fmtDate(s) { return parseDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+  function toUSD(amount,currency) { return currency === 'CAD' ? amount / state.settings.cadPerUsd : amount; }
+  function fromUSD(amount,currency) { return currency === 'CAD' ? amount * state.settings.cadPerUsd : amount; }
+  function recurrenceLabel(v) { return ({none:'One time',weekly:'Weekly',biweekly:'Every 2 weeks',monthly:'Monthly',quarterly:'Quarterly',annual:'Annual'})[v] || v; }
+  function scheduleLabel(item) { return `${fmtDate(item.startDate)} · ${recurrenceLabel(item.recurrence)}${item.endDate ? ` through ${fmtDate(item.endDate)}`:''}`; }
+
+  function generateDates(item, targetDate=state.settings.targetDate) {
+    if (!item.active || !item.startDate) return [];
+    const start = parseDate(item.startDate);
+    const forecastStart = parseDate(state.settings.forecastStart);
+    const target = parseDate(targetDate);
+    const hardEnd = item.endDate ? parseDate(item.endDate) : target;
+    const end = hardEnd < target ? hardEnd : target;
+    if (start > end) return [];
+    const out = [];
+    let d = new Date(start);
+    let guard = 0;
+    while (d <= end && guard++ < 1000) {
+      if (d >= forecastStart) out.push(toISO(d));
+      if (item.recurrence === 'none') break;
+      if (item.recurrence === 'weekly') d = addDays(d,7);
+      else if (item.recurrence === 'biweekly') d = addDays(d,14);
+      else if (item.recurrence === 'monthly') d = addMonths(d,1);
+      else if (item.recurrence === 'quarterly') d = addMonths(d,3);
+      else if (item.recurrence === 'annual') d = addMonths(d,12);
+      else break;
+    }
+    return out;
+  }
+
+  const singleBrackets2026 = [
+    [12400, .10],
+    [50400, .12],
+    [105700, .22],
+    [201775, .24],
+    [256225, .32],
+    [640600, .35],
+    [Infinity, .37]
+  ];
+  function progressiveFederalTax(taxable) {
+    let remaining = Math.max(0,taxable), prev = 0, tax = 0;
+    for (const [cap, rate] of singleBrackets2026) {
+      const width = cap - prev;
+      const taxed = Math.min(remaining,width);
+      tax += taxed * rate;
+      remaining -= taxed;
+      prev = cap;
+      if (remaining <= 0) break;
+    }
+    return tax;
+  }
+  function estimateIncomeNet(item) {
+    if (item.netOverride !== null && item.netOverride !== '' && !Number.isNaN(Number(item.netOverride))) return Number(item.netOverride);
+    const gross = Number(item.gross)||0;
+    const pretax = Math.min(gross, Number(item.pretax)||0);
+    const taxablePay = Math.max(0,gross-pretax);
+    if (item.taxMode === 'none') return gross-pretax;
+    const ssRate = Number(state.settings.ssRate)/100;
+    const medicareRate = Number(state.settings.medicareRate)/100;
+    const ssPerPeriodCap = Number(state.settings.ssWageBase) / Number(state.settings.payPeriods);
+    const socialSecurity = item.taxMode === 'regular' ? Math.min(taxablePay, ssPerPeriodCap) * ssRate : taxablePay * ssRate;
+    const medicare = taxablePay * medicareRate;
+    const fica = socialSecurity + medicare;
+    const stateTax = taxablePay * Number(state.settings.stateTaxRate)/100;
+    let federal = 0;
+    if (item.taxMode === 'supplemental') {
+      federal = taxablePay * Number(state.settings.supplementalRate)/100;
+    } else {
+      const annualized = taxablePay * Number(state.settings.payPeriods);
+      const taxableAnnual = Math.max(0, annualized - Number(state.settings.standardDeduction));
+      federal = progressiveFederalTax(taxableAnnual) / Number(state.settings.payPeriods);
+    }
+    return Math.max(0,gross-pretax-fica-stateTax-federal);
+  }
+
+  function monthlyLoanPayment(principal, apr, months) {
+    if (principal <= 0 || months <= 0) return 0;
+    const r = apr/100/12;
+    if (!r) return principal/months;
+    return principal * r / (1-Math.pow(1+r,-months));
+  }
+  function vehicleCalc() {
+    const v=state.vehicle;
+    const otd = Number(v.price)*(1+Number(v.taxRate)/100)+Number(v.fees);
+    const financed = Math.max(0,otd-Number(v.downPayment));
+    const payment = monthlyLoanPayment(financed,Number(v.apr),Number(v.termMonths));
+    return {otd,financed,payment,allIn:payment+Number(v.insuranceMonthly)+Number(v.fuelMonthly)+Number(v.maintenanceMonthly)};
+  }
+
+  function buildVehicleEvents(targetDate=state.settings.targetDate) {
+    if (!state.vehicle.enabled) return [];
+    const v=state.vehicle, events=[];
+    const target=parseDate(targetDate), start=parseDate(state.settings.forecastStart);
+    if (v.purchaseDate && parseDate(v.purchaseDate) >= start && parseDate(v.purchaseDate)<=target) {
+      events.push({date:v.purchaseDate,name:'GLE cash down payment',type:'Vehicle',amountUSD:-Number(v.downPayment),source:'vehicle'});
+      events.push({date:v.purchaseDate,name:'First month vehicle insurance',type:'Vehicle',amountUSD:-Number(v.insuranceMonthly),source:'vehicle'});
+      events.push({date:v.purchaseDate,name:'First month fuel/tolls budget',type:'Vehicle',amountUSD:-Number(v.fuelMonthly),source:'vehicle'});
+      events.push({date:v.purchaseDate,name:'First month maintenance reserve',type:'Vehicle',amountUSD:-Number(v.maintenanceMonthly),source:'vehicle'});
+    }
+    const calc=vehicleCalc();
+    if (v.firstPaymentDate) {
+      const paymentItem={active:true,startDate:v.firstPaymentDate,endDate:'',recurrence:'monthly'};
+      generateDates(paymentItem,targetDate).forEach(date=>events.push({date,name:'GLE loan payment',type:'Vehicle',amountUSD:-calc.payment,source:'vehicle'}));
+    }
+    if (v.purchaseDate) {
+      const nextMonth=toISO(addMonths(parseDate(v.purchaseDate),1));
+      const recurring={active:true,startDate:nextMonth,endDate:'',recurrence:'monthly'};
+      generateDates(recurring,targetDate).forEach(date=>{
+        events.push({date,name:'Vehicle insurance',type:'Vehicle',amountUSD:-Number(v.insuranceMonthly),source:'vehicle'});
+        events.push({date,name:'Fuel/tolls budget',type:'Vehicle',amountUSD:-Number(v.fuelMonthly),source:'vehicle'});
+        events.push({date,name:'Maintenance reserve',type:'Vehicle',amountUSD:-Number(v.maintenanceMonthly),source:'vehicle'});
+      });
+    }
+    return events;
+  }
+
+  function buildEvents(targetDate=state.settings.targetDate, includeDebtPayments=true) {
+    const events=[];
+    state.incomes.filter(x=>x.active).forEach(item=>{
+      const netUSD=toUSD(estimateIncomeNet(item),item.currency);
+      const grossUSD=toUSD(Number(item.gross)||0,item.currency);
+      generateDates(item,targetDate).forEach(date=>events.push({date,name:item.name,type:'Income',amountUSD:netUSD,grossUSD,source:'income',sourceId:item.id}));
+    });
+    state.bills.filter(x=>x.active && (includeDebtPayments || !x.debtId)).forEach(item=>{
+      const amountUSD=toUSD(Number(item.amount)||0,item.currency);
+      generateDates(item,targetDate).forEach(date=>events.push({date,name:item.name,type:item.debtId?'Debt payment':item.category,amountUSD:-amountUSD,source:'bill',sourceId:item.id,debtId:item.debtId||''}));
+    });
+    events.push(...buildVehicleEvents(targetDate));
+    events.sort((a,b)=> a.date.localeCompare(b.date) || (b.amountUSD-a.amountUSD));
+    let balance=Number(state.settings.startingCash)||0;
+    events.forEach(e=>{ balance+=e.amountUSD; e.runningBalance=balance; });
+    return events;
+  }
+
+  function projectDebt(debt, targetDate=state.settings.targetDate) {
+    let balanceUSD=toUSD(Number(debt.balance)||0,debt.currency);
+    let currentDate=state.settings.forecastStart;
+    let interest=0, payments=0;
+    const paymentEvents=buildEvents(targetDate,true).filter(e=>e.debtId===debt.id).sort((a,b)=>a.date.localeCompare(b.date));
+    for (const p of paymentEvents) {
+      const days=daysBetween(currentDate,p.date);
+      const accrued=balanceUSD*(Number(debt.apr)/100)*days/365;
+      balanceUSD+=accrued; interest+=accrued;
+      const paid=Math.min(balanceUSD,Math.abs(p.amountUSD));
+      balanceUSD-=paid; payments+=paid;
+      currentDate=p.date;
+    }
+    const finalDays=daysBetween(currentDate,targetDate);
+    const finalInterest=balanceUSD*(Number(debt.apr)/100)*finalDays/365;
+    balanceUSD+=finalInterest; interest+=finalInterest;
+    return {balanceUSD,interestUSD:interest,paymentsUSD:payments};
+  }
+
+  function getSummary() {
+    const events=buildEvents();
+    const income=events.filter(e=>e.amountUSD>0).reduce((s,e)=>s+e.amountUSD,0);
+    const gross=events.filter(e=>e.source==='income').reduce((s,e)=>s+(e.grossUSD||0),0);
+    const outflows=-events.filter(e=>e.amountUSD<0).reduce((s,e)=>s+e.amountUSD,0);
+    const cash=(Number(state.settings.startingCash)||0)+income-outflows;
+    const debtProjections=state.debts.map(d=>({debt:d,...projectDebt(d)}));
+    const totalDebt=debtProjections.reduce((s,d)=>s+d.balanceUSD,0);
+    const revolvingDebt=debtProjections.filter(x=>x.debt.revolving).reduce((s,d)=>s+d.balanceUSD,0);
+    const interest=debtProjections.reduce((s,d)=>s+d.interestUSD,0);
+    return {events,income,gross,outflows,cash,totalDebt,revolvingDebt,interest,debtProjections};
+  }
+
+  function renderAll() {
+    saveState();
+    document.getElementById('headerTarget').value=state.settings.targetDate;
+    renderDashboard(); renderIncome(); renderBills(); renderDebts(); renderVehicle(); renderSettings(); populateDebtOptions();
+  }
+
+  function renderDashboard() {
+    const s=getSummary();
+    const cashEl=document.getElementById('cashTarget');
+    cashEl.textContent=money(s.cash);
+    cashEl.className=`value ${s.cash>=0?'positive':'negative'}`;
+    document.getElementById('cashTargetDetail').textContent=`Starting cash ${money(state.settings.startingCash)} · ${fmtDate(state.settings.targetDate)}`;
+    document.getElementById('netIncome').textContent=money(s.income);
+    document.getElementById('grossIncomeDetail').textContent=`From ${money(s.gross)} gross income`;
+    document.getElementById('cashOutflows').textContent=money(s.outflows);
+    document.getElementById('outflowDetail').textContent=`Includes scheduled debt and vehicle payments`;
+    document.getElementById('debtTarget').textContent=money(s.totalDebt);
+    document.getElementById('debtInterestDetail').textContent=`About ${money(s.interest)} interest accrued in forecast`;
+    const np=s.cash-s.totalDebt;
+    const npEl=document.getElementById('netPosition'); npEl.textContent=money(np); npEl.className=`value ${np>=0?'positive':'negative'}`;
+
+    const minBalance=Math.min(Number(state.settings.startingCash)||0,...s.events.map(e=>e.runningBalance));
+    const highApr=s.debtProjections.filter(x=>x.debt.apr>=20).reduce((sum,x)=>sum+x.balanceUSD,0);
+    const regularPay=state.incomes.find(i=>i.recurrence==='biweekly'&&i.taxMode==='regular');
+    const nextPay=regularPay?estimateIncomeNet(regularPay):0;
+    document.getElementById('snapshotMetrics').innerHTML=`
+      <div class="metric-row"><span>Lowest projected cash</span><strong class="${minBalance<0?'negative':''}">${money(minBalance)}</strong></div>
+      <div class="metric-row"><span>Estimated regular paycheck</span><strong>${money(nextPay)}</strong></div>
+      <div class="metric-row"><span>24%–27% debt remaining</span><strong class="warning">${money(highApr)}</strong></div>
+      <div class="metric-row"><span>CAD conversion assumption</span><strong>C$${Number(state.settings.cadPerUsd).toFixed(4)} / US$1</strong></div>`;
+
+    const v=vehicleCalc();
+    document.getElementById('vehicleScenarioSummary').textContent=state.vehicle.enabled?`${money(v.payment)}/mo loan`:'Not included';
+    document.getElementById('vehicleScenarioDetail').textContent=state.vehicle.enabled?`${money(v.allIn)}/mo modeled all-in · ${money(v.otd)} out-the-door`:'Enable it in Vehicle scenario to compare cash and debt outcomes.';
+
+    const notice=document.getElementById('riskNotice');
+    if (minBalance<0) notice.innerHTML=`<div class="notice bad"><strong>Cash shortfall:</strong> the current plan falls below zero by ${money(Math.abs(minBalance))}. Change timing, reduce payments, increase starting cash, or disable the vehicle scenario.</div>`;
+    else if (s.cash<2500) notice.innerHTML=`<div class="notice warn"><strong>Thin liquidity:</strong> projected cash on ${fmtDate(state.settings.targetDate)} is below a $2,500 starter reserve.</div>`;
+    else notice.innerHTML=`<div class="notice"><strong>Forecast is cash-positive.</strong> Review the debt balance and ledger before treating the ending cash as spendable savings.</div>`;
+
+    document.getElementById('ledgerBody').innerHTML=s.events.length?s.events.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${escapeHtml(e.name)}</td><td><span class="pill">${escapeHtml(e.type)}</span></td><td class="amount ${e.amountUSD>=0?'in':'out'}">${e.amountUSD>=0?'+':''}${money2(e.amountUSD)}</td><td>${money2(e.runningBalance)}</td></tr>`).join(''):`<tr><td colspan="5" class="muted">No transactions in this period.</td></tr>`;
+    drawCashChart(s.events);
+  }
+
+  function drawCashChart(events) {
+    const canvas=document.getElementById('cashChart');
+    const rect=canvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=Math.max(700,rect.width*dpr); canvas.height=330*dpr;
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    const w=canvas.width/dpr,h=canvas.height/dpr,p={l:60,r:22,t:20,b:42};
+    ctx.clearRect(0,0,w,h);
+    const points=[{date:state.settings.forecastStart,balance:Number(state.settings.startingCash)||0},...events.map(e=>({date:e.date,balance:e.runningBalance}))];
+    const vals=points.map(x=>x.balance); let min=Math.min(...vals,0),max=Math.max(...vals,0); if(max===min){max+=1;min-=1;} const pad=(max-min)*.12; max+=pad;min-=pad;
+    const x=i=>p.l+(w-p.l-p.r)*(points.length===1?0:i/(points.length-1));
+    const y=v=>p.t+(h-p.t-p.b)*(max-v)/(max-min);
+    ctx.strokeStyle='#dce3ec';ctx.lineWidth=1;ctx.fillStyle='#64748b';ctx.font='12px system-ui';
+    for(let i=0;i<=4;i++){const val=max-(max-min)*i/4;const yy=y(val);ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(w-p.r,yy);ctx.stroke();ctx.fillText(money(val).replace('.00',''),4,yy+4);}
+    if(min<0&&max>0){ctx.strokeStyle='#ef4444';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(p.l,y(0));ctx.lineTo(w-p.r,y(0));ctx.stroke();ctx.setLineDash([]);}
+    ctx.beginPath();points.forEach((pt,i)=>{if(i===0)ctx.moveTo(x(i),y(pt.balance));else{ctx.lineTo(x(i),y(points[i-1].balance));ctx.lineTo(x(i),y(pt.balance));}});ctx.strokeStyle='#2563eb';ctx.lineWidth=3;ctx.stroke();
+    points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(x(i),y(pt.balance),3.5,0,Math.PI*2);ctx.fillStyle=pt.balance<0?'#c62828':'#2563eb';ctx.fill();});
+    const labels=[0,Math.floor((points.length-1)/2),points.length-1];ctx.fillStyle='#64748b';ctx.textAlign='center';labels.forEach(i=>ctx.fillText(new Date(points[i].date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}),x(i),h-14));ctx.textAlign='left';
+  }
+
+  function renderIncome() {
+    document.getElementById('incomeTable').innerHTML=state.incomes.map(i=>`<tr><td>${escapeHtml(i.name)}${!i.active?' <span class="muted">(off)</span>':''}</td><td>${scheduleLabel(i)}</td><td>${money2(i.gross,i.currency)}</td><td>${money2(estimateIncomeNet(i),i.currency)}</td><td>${i.netOverride!==null&&i.netOverride!==''?'Net override':escapeHtml(i.taxMode)}</td><td><button class="btn sm secondary" data-action="edit-income" data-id="${i.id}">Edit</button> <button class="btn sm danger" data-action="delete-income" data-id="${i.id}">Delete</button></td></tr>`).join('');
+  }
+  function renderBills() {
+    document.getElementById('billTable').innerHTML=state.bills.map(b=>{const debt=state.debts.find(d=>d.id===b.debtId);return `<tr><td>${escapeHtml(b.name)}${b.autoGenerated?' <span class="pill">Auto</span>':''}${!b.active?' <span class="muted">(off)</span>':''}</td><td>${scheduleLabel(b)}</td><td>${money2(b.amount,b.currency)}</td><td>${escapeHtml(b.category)}</td><td>${debt?escapeHtml(debt.name):'—'}</td><td><button class="btn sm secondary" data-action="edit-bill" data-id="${b.id}">Edit</button> <button class="btn sm danger" data-action="delete-bill" data-id="${b.id}">Delete</button></td></tr>`}).join('');
+  }
+  function renderDebts() {
+    const projections=state.debts.map(d=>({d,p:projectDebt(d)}));
+    document.getElementById('debtCards').innerHTML=projections.map(({d,p})=>{const opening=toUSD(d.balance,d.currency);const pct=opening?Math.min(100,p.balanceUSD/opening*100):0;return `<div class="card"><div class="label">${escapeHtml(d.name)}</div><div class="value ${d.apr>=20?'warning':''}">${money(p.balanceUSD)}</div><div class="detail">${d.apr}% APR · ${money(p.paymentsUSD)} paid</div><div class="debt-bar"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div></div>`}).join('');
+    document.getElementById('debtTable').innerHTML=projections.map(({d,p})=>`<tr><td>${escapeHtml(d.name)}</td><td>${money2(d.balance,d.currency)}</td><td>${d.apr}%</td><td>${money2(p.paymentsUSD)}</td><td>${money2(p.interestUSD)}</td><td><strong>${money2(p.balanceUSD)}</strong></td><td><button class="btn sm secondary" data-action="edit-debt" data-id="${d.id}">Edit</button> <button class="btn sm danger" data-action="delete-debt" data-id="${d.id}">Delete</button></td></tr>`).join('');
+  }
+  function renderVehicle() {
+    const v=state.vehicle,c=vehicleCalc();
+    ['vehiclePurchaseDate','vehiclePrice','vehicleTaxRate','vehicleFees','vehicleDown','vehicleApr','vehicleTerm','vehicleFirstPayment','vehicleInsurance','vehicleFuel','vehicleMaintenance'].forEach(()=>{});
+    document.getElementById('vehicleEnabled').checked=!!v.enabled;
+    document.getElementById('vehiclePurchaseDate').value=v.purchaseDate;
+    document.getElementById('vehiclePrice').value=v.price;
+    document.getElementById('vehicleTaxRate').value=v.taxRate;
+    document.getElementById('vehicleFees').value=v.fees;
+    document.getElementById('vehicleDown').value=v.downPayment;
+    document.getElementById('vehicleApr').value=v.apr;
+    document.getElementById('vehicleTerm').value=v.termMonths;
+    document.getElementById('vehicleFirstPayment').value=v.firstPaymentDate;
+    document.getElementById('vehicleInsurance').value=v.insuranceMonthly;
+    document.getElementById('vehicleFuel').value=v.fuelMonthly;
+    document.getElementById('vehicleMaintenance').value=v.maintenanceMonthly;
+    document.getElementById('vehicleOtd').textContent=money(c.otd);
+    document.getElementById('vehicleFinanced').textContent=money(c.financed);
+    document.getElementById('vehicleMonthly').textContent=money(c.payment);
+    document.getElementById('vehicleAllIn').textContent=`About ${money(c.allIn)}/month including modeled insurance, fuel, and reserve`;
+  }
+  function renderSettings() {
+    const s=state.settings;
+    document.getElementById('forecastStart').value=s.forecastStart;document.getElementById('targetDate').value=s.targetDate;document.getElementById('startingCash').value=s.startingCash;document.getElementById('cadPerUsd').value=s.cadPerUsd;document.getElementById('payPeriods').value=s.payPeriods;document.getElementById('standardDeduction').value=s.standardDeduction;document.getElementById('ssRate').value=s.ssRate;document.getElementById('medicareRate').value=s.medicareRate;document.getElementById('ssWageBase').value=s.ssWageBase;document.getElementById('stateTaxRate').value=s.stateTaxRate;document.getElementById('supplementalRate').value=s.supplementalRate;
+  }
+  function populateDebtOptions() {
+    const select=document.getElementById('billDebtId'); const current=select.value;
+    select.innerHTML='<option value="">None</option>'+state.debts.map(d=>`<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+    if([...select.options].some(o=>o.value===current))select.value=current;
+  }
+  function escapeHtml(s='') { return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+  function clearIncomeForm(){document.getElementById('incomeForm').reset();document.getElementById('incomeId').value='';document.getElementById('incomeActive').checked=true;document.getElementById('incomePretax').value=0;}
+  function clearBillForm(){document.getElementById('billForm').reset();document.getElementById('billId').value='';document.getElementById('billActive').checked=true;}
+  function clearDebtForm(){document.getElementById('debtForm').reset();document.getElementById('debtId').value='';document.getElementById('debtRevolving').checked=true;document.getElementById('debtMinimum').value=0;}
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='dashboard')setTimeout(()=>renderDashboard(),20);}));
+  document.getElementById('headerTarget').addEventListener('change',e=>{state.settings.targetDate=e.target.value;renderAll();});
+  window.addEventListener('resize',()=>{if(document.getElementById('dashboard').classList.contains('active'))drawCashChart(getSummary().events);});
+
+  document.getElementById('incomeForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('incomeId').value||uid('inc');const obj={id,name:incomeName.value,startDate:incomeStart.value,endDate:incomeEnd.value,recurrence:incomeRecurrence.value,gross:Number(incomeGross.value),currency:incomeCurrency.value,taxMode:incomeTaxMode.value,pretax:Number(incomePretax.value)||0,netOverride:incomeNetOverride.value===''?null:Number(incomeNetOverride.value),active:incomeActive.checked};const idx=state.incomes.findIndex(x=>x.id===id);if(idx>=0)state.incomes[idx]=obj;else state.incomes.push(obj);clearIncomeForm();renderAll();});
+  document.getElementById('clearIncome').addEventListener('click',clearIncomeForm);
+  document.getElementById('billForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('billId').value||uid('bill');const obj={id,name:billName.value,startDate:billStart.value,endDate:billEnd.value,recurrence:billRecurrence.value,amount:Number(billAmount.value),currency:billCurrency.value,category:billCategory.value,debtId:billDebtId.value,active:billActive.checked,autoGenerated:false};const idx=state.bills.findIndex(x=>x.id===id);if(idx>=0)state.bills[idx]=obj;else state.bills.push(obj);clearBillForm();renderAll();});
+  document.getElementById('clearBill').addEventListener('click',clearBillForm);
+  document.getElementById('debtForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('debtId').value||uid('debt');const obj={id,name:debtName.value,balance:Number(debtBalance.value),currency:debtCurrency.value,apr:Number(debtApr.value),minimum:Number(debtMinimum.value)||0,deferredUntil:debtDeferredUntil.value,revolving:debtRevolving.checked};const idx=state.debts.findIndex(x=>x.id===id);if(idx>=0)state.debts[idx]=obj;else state.debts.push(obj);clearDebtForm();renderAll();});
+  document.getElementById('clearDebt').addEventListener('click',clearDebtForm);
+
+  document.body.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-action]');if(!btn)return;const {action,id}=btn.dataset;
+    if(action==='edit-income'){const i=state.incomes.find(x=>x.id===id);if(!i)return;incomeId.value=i.id;incomeName.value=i.name;incomeStart.value=i.startDate;incomeEnd.value=i.endDate||'';incomeRecurrence.value=i.recurrence;incomeGross.value=i.gross;incomeCurrency.value=i.currency;incomeTaxMode.value=i.taxMode;incomePretax.value=i.pretax||0;incomeNetOverride.value=i.netOverride??'';incomeActive.checked=i.active;document.querySelector('[data-tab="income"]').click();window.scrollTo({top:0,behavior:'smooth'});}
+    if(action==='delete-income'&&confirm('Delete this income schedule?')){state.incomes=state.incomes.filter(x=>x.id!==id);renderAll();}
+    if(action==='edit-bill'){const b=state.bills.find(x=>x.id===id);if(!b)return;billId.value=b.id;billName.value=b.name;billStart.value=b.startDate;billEnd.value=b.endDate||'';billRecurrence.value=b.recurrence;billAmount.value=b.amount;billCurrency.value=b.currency;billCategory.value=b.category;billDebtId.value=b.debtId||'';billActive.checked=b.active;document.querySelector('[data-tab="bills"]').click();window.scrollTo({top:0,behavior:'smooth'});}
+    if(action==='delete-bill'&&confirm('Delete this bill or payment?')){state.bills=state.bills.filter(x=>x.id!==id);renderAll();}
+    if(action==='edit-debt'){const d=state.debts.find(x=>x.id===id);if(!d)return;debtId.value=d.id;debtName.value=d.name;debtBalance.value=d.balance;debtCurrency.value=d.currency;debtApr.value=d.apr;debtMinimum.value=d.minimum||0;debtDeferredUntil.value=d.deferredUntil||'';debtRevolving.checked=d.revolving;document.querySelector('[data-tab="debts"]').click();window.scrollTo({top:0,behavior:'smooth'});}
+    if(action==='delete-debt'&&confirm('Delete this debt and disconnect its scheduled payments?')){state.debts=state.debts.filter(x=>x.id!==id);state.bills.forEach(b=>{if(b.debtId===id)b.debtId='';});renderAll();}
+  });
+
+  document.getElementById('vehicleEnabled').addEventListener('change',e=>{state.vehicle.enabled=e.target.checked;renderAll();});
+  document.getElementById('vehicleForm').addEventListener('submit',e=>{e.preventDefault();state.vehicle={...state.vehicle,enabled:vehicleEnabled.checked,purchaseDate:vehiclePurchaseDate.value,price:Number(vehiclePrice.value),taxRate:Number(vehicleTaxRate.value),fees:Number(vehicleFees.value),downPayment:Number(vehicleDown.value),apr:Number(vehicleApr.value),termMonths:Number(vehicleTerm.value),firstPaymentDate:vehicleFirstPayment.value,insuranceMonthly:Number(vehicleInsurance.value),fuelMonthly:Number(vehicleFuel.value),maintenanceMonthly:Number(vehicleMaintenance.value)};renderAll();});
+  document.getElementById('settingsForm').addEventListener('submit',e=>{e.preventDefault();state.settings={forecastStart:forecastStart.value,targetDate:targetDate.value,startingCash:Number(startingCash.value)||0,cadPerUsd:Number(cadPerUsd.value)||1.42,payPeriods:Number(payPeriods.value)||26,standardDeduction:Number(standardDeduction.value)||16100,ssRate:Number(ssRate.value)||0,medicareRate:Number(medicareRate.value)||0,ssWageBase:Number(ssWageBase.value)||184500,stateTaxRate:Number(stateTaxRate.value)||0,supplementalRate:Number(supplementalRate.value)||22};renderAll();});
+
+  document.getElementById('removeAutoPayments').addEventListener('click',()=>{state.bills=state.bills.filter(b=>!b.autoGenerated);renderAll();});
+  document.getElementById('generateAvalanche').addEventListener('click',()=>{
+    state.bills=state.bills.filter(b=>!b.autoGenerated);
+    const floor=Math.max(0,Number(planCashFloor.value)||0),maxPay=Math.max(0,Number(planMaxPayment.value)||Infinity);
+    const baseEvents=buildEvents(state.settings.targetDate,false);
+    const paydays=[...new Set(baseEvents.filter(e=>e.source==='income').map(e=>e.date))].sort();
+    const balances={};state.debts.forEach(d=>balances[d.id]=toUSD(d.balance,d.currency));
+    let cash=Number(state.settings.startingCash)||0;
+    for(let i=0;i<paydays.length;i++){
+      const day=paydays[i],next=paydays[i+1]||'9999-12-31';
+      baseEvents.filter(e=>e.date<day).forEach(()=>{});
+      const dayEvents=baseEvents.filter(e=>e.date===day);dayEvents.forEach(e=>cash+=e.amountUSD);
+      const futureBills=baseEvents.filter(e=>e.date>day&&e.date<next&&e.amountUSD<0).reduce((s,e)=>s+Math.abs(e.amountUSD),0);
+      let available=Math.min(maxPay,Math.max(0,cash-futureBills-floor));
+      const eligible=state.debts.filter(d=>(!d.deferredUntil||d.deferredUntil<=day)&&balances[d.id]>0).sort((a,b)=>b.apr-a.apr);
+      for(const d of eligible){if(available<=.01)break;const p=Math.min(available,balances[d.id]);if(p<=.01)continue;state.bills.push({id:uid('auto'),name:`Auto avalanche: ${d.name}`,startDate:day,endDate:'',recurrence:'none',amount:Number(fromUSD(p,d.currency).toFixed(2)),currency:d.currency,category:'Debt payment',debtId:d.id,active:true,autoGenerated:true});balances[d.id]-=p;available-=p;cash-=p;}
+      const intervalEvents=baseEvents.filter(e=>e.date>day&&e.date<next);intervalEvents.forEach(e=>cash+=e.amountUSD);
+    }
+    renderAll();
+  });
+
+
+  document.getElementById('cloudConfigForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const config = { supabaseUrl:supabaseProjectUrl.value.trim().replace(/\/$/,''), supabaseKey:supabaseAnonKey.value.trim() };
+    saveCloudConfig(config);
+    setCloudStatus('syncing','Applying configuration…','Connecting to Supabase.');
+    await initializeCloud();
+  });
+  document.getElementById('showCloudKey').addEventListener('click', () => {
+    const input = document.getElementById('supabaseAnonKey');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    document.getElementById('showCloudKey').textContent = input.type === 'password' ? 'Show key' : 'Hide key';
+  });
+  document.getElementById('signInGoogle').addEventListener('click',()=>signInCloud('google'));
+  document.getElementById('signInApple').addEventListener('click',()=>signInCloud('apple'));
+  document.getElementById('signInEmail').addEventListener('click',signInWithEmailLink);
+  document.getElementById('magicLinkEmail').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); signInWithEmailLink(); } });
+  document.getElementById('signOutCloud').addEventListener('click',async()=>{
+    if (supabaseClient) await supabaseClient.auth.signOut();
+    cloudSession = null; renderCloudAccount();
+    setCloudStatus('', 'Local only', 'Signed out. Local planning data remains on this device.');
+  });
+  document.getElementById('syncNow').addEventListener('click',()=>syncNowCloud());
+  document.getElementById('pullCloud').addEventListener('click',()=>{
+    if (confirm('Replace this device’s planner data with the cloud copy? Export a backup first if needed.')) pullCloudNow({force:true});
+  });
+  document.getElementById('pushCloud').addEventListener('click',()=>{
+    if (confirm('Upload this device and replace the current cloud copy?')) pushCloudNow();
+  });
+  window.addEventListener('focus',()=>{ if (cloudSession) syncNowCloud({quiet:true}); });
+  document.addEventListener('visibilitychange',()=>{ if (document.visibilityState==='visible' && cloudSession) syncNowCloud({quiet:true}); });
+
+  document.getElementById('downloadCsv').addEventListener('click',()=>{const rows=[['Date','Item','Type','Amount USD','Running cash USD'],...getSummary().events.map(e=>[e.date,e.name,e.type,e.amountUSD.toFixed(2),e.runningBalance.toFixed(2)])];downloadBlob(rows.map(r=>r.map(csvCell).join(',')).join('\n'),'financial_forecast_ledger.csv','text/csv');});
+  function csvCell(v){const s=String(v??'');return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;}
+  document.getElementById('exportJson').addEventListener('click',()=>downloadBlob(JSON.stringify(state,null,2),'financial_planner_backup.json','application/json'));
+  document.getElementById('importJson').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{state=JSON.parse(reader.result);renderAll();alert('Backup imported.');}catch{alert('That file is not a valid planner backup.');}};reader.readAsText(file);e.target.value='';});
+  document.getElementById('resetData').addEventListener('click',()=>{if(confirm('Reset all data to a blank plan?')){state=clone(defaultState);renderAll();}});
+  function downloadBlob(content,name,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+  clearIncomeForm(); clearBillForm(); clearDebtForm(); renderAll();
+  initializeCloud();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+  }
+})();
+</script>
+</body>
+</html>
