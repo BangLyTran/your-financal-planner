@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   migrate:
@@ -23,10 +24,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Decode migration payloads
+      - name: Apply and validate migrations
+        id: migration
+        continue-on-error: true
         shell: bash
         run: |
-          python - <<'PY'
+          set +e
+          {
+            python - <<'PY'
           from pathlib import Path
           import base64, lzma
           payloads = [
@@ -39,18 +44,10 @@ jobs:
               Path(target).write_bytes(script)
               print(f'Decoded {source} -> {target} ({len(script)} bytes)')
           PY
-          python -m py_compile /tmp/apply_v9_dynamic_cash_and_chart.py /tmp/apply_v10_monthly_allocation_pie.py
-
-      - name: Apply dynamic savings and chart migrations
-        shell: bash
-        run: |
-          python /tmp/apply_v9_dynamic_cash_and_chart.py
-          python /tmp/apply_v10_monthly_allocation_pie.py
-
-      - name: Validate application JavaScript and feature markers
-        shell: bash
-        run: |
-          python - <<'PY'
+            python -m py_compile /tmp/apply_v9_dynamic_cash_and_chart.py /tmp/apply_v10_monthly_allocation_pie.py
+            python /tmp/apply_v9_dynamic_cash_and_chart.py
+            python /tmp/apply_v10_monthly_allocation_pie.py
+            python - <<'PY'
           from pathlib import Path
           import re
           html = Path('index.html').read_text(encoding='utf-8')
@@ -73,11 +70,18 @@ jobs:
           duplicates = sorted({item for item in ids if ids.count(item) > 1})
           if duplicates:
               raise SystemExit(f'Duplicate HTML ids: {duplicates}')
+          print('All required markers are present and HTML ids are unique.')
           PY
-          node --check /tmp/financial-planner-v10.js
-          grep -q "financial-planner-secure-v10-monthly-allocation-pie" service-worker.js
+            node --check /tmp/financial-planner-v10.js
+            grep -q "financial-planner-secure-v10-monthly-allocation-pie" service-worker.js
+          } > /tmp/migration.log 2>&1
+          status=$?
+          cat /tmp/migration.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
 
       - name: Commit updated application
+        if: steps.migration.outcome == 'success'
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -89,3 +93,31 @@ jobs:
           fi
           git commit -m 'Add dynamic cash sweeps, spending room, zoom charts, and monthly allocation pie'
           git push origin HEAD:main
+
+      - name: Report result on trigger issue
+        if: always() && github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+        run: |
+          {
+            if [ "$MIGRATION_OUTCOME" = "success" ]; then
+              echo '✅ Financial planner visualization migration completed successfully.'
+            else
+              echo '❌ Financial planner visualization migration failed.'
+            fi
+            echo
+            echo '```text'
+            tail -n 80 /tmp/migration.log 2>/dev/null || echo 'No migration log was produced.'
+            echo '```'
+          } > /tmp/issue-report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/issue-report.md
+          if [ "$MIGRATION_OUTCOME" = "success" ]; then
+            gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi
+
+      - name: Fail workflow when migration failed
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
