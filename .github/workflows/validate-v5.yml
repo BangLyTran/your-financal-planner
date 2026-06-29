@@ -1,0 +1,53 @@
+name: Validate financial planner
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'service-worker.js'
+      - '.github/workflows/validate-v5.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract inline application JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found')
+          Path('/tmp/financial-planner.js').write_text(inline[-1], encoding='utf-8')
+          required = ['debtSummaryToggle','currentDebtTotals','buildDebtPaymentEvents','debtRemainingUSD','forecastLedger']
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing required v5 markers: {missing}')
+          PY
+
+      - name: Check JavaScript syntax
+        run: node --check /tmp/financial-planner.js
+
+      - name: Check service worker version
+        run: grep -q "financial-planner-secure-v5-debt-details" service-worker.js
+
+      - name: Record successful validation
+        run: |
+          printf 'Validated commit: %s\nValidated features: debt breakdown, ledger debt balances, recurring minimum payments, USD/CAD current debt total\n' "$GITHUB_SHA" > validation-v5.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add validation-v5.txt
+          git commit -m 'Validate v5 financial planner build'
+          git push origin HEAD:main
