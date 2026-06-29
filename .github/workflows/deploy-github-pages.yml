@@ -50,11 +50,16 @@ jobs:
               'monthlySpendingRoomPanel', 'buildMonthlySpendingRoom', 'chartTooltip',
               'resetChartZoom', 'setupChartInteractions', 'niceMoneyStep',
               'monthlyAllocationChart', 'monthlyAllocationLegend',
-              'drawMonthlyAllocationChart', 'setupMonthlyAllocationInteractions'
+              'drawMonthlyAllocationChart', 'setupMonthlyAllocationInteractions',
+              'for(let installment=0;installment<termMonths;installment++)',
+              'vehicleLoanPaymentNumber:installment+1',
+              'vehicleLoanTermMonths:termMonths'
           ]
           missing = [item for item in required if item not in html]
           if missing:
-              raise SystemExit(f'Missing visualization markers: {missing}')
+              raise SystemExit(f'Missing planner feature markers: {missing}')
+          if "const paymentItem={active:true,startDate:v.firstPaymentDate,endDate:'',recurrence:'monthly'};" in html:
+              raise SystemExit('Open-ended vehicle loan recurrence is still present.')
           ids = [item for item in re.findall(r'\bid="([^"]+)"', html) if '${' not in item]
           duplicates = sorted({item for item in ids if ids.count(item) > 1})
           if duplicates:
@@ -62,7 +67,7 @@ jobs:
           print('Required feature markers are present and static HTML ids are unique.')
           PY
             node --check /tmp/financial-planner.js
-            grep -q "financial-planner-secure-v10-monthly-allocation-pie" service-worker.js
+            grep -q "financial-planner-secure-v11-vehicle-loan-term-fix" service-worker.js
           } > /tmp/validation.log 2>&1
           status=$?
           cat /tmp/validation.log
@@ -123,7 +128,7 @@ jobs:
             echo
             echo "Published URL: $PAGE_URL"
             echo
-            echo 'Validated features: dynamic emergency-fund cash ceiling, automatic excess-cash investment sweeps, monthly spending room, interactive date/value chart zoom, and monthly allocation donut chart.'
+            echo 'Validated features include the exact vehicle-loan installment limit: the loan now stops after the selected term instead of recurring indefinitely.'
           } > /tmp/report.md
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/report.md
           gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
