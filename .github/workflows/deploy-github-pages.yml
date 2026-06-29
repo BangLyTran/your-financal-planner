@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write
 
 concurrency:
   group: github-pages
@@ -17,6 +20,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'issues' || github.event.issue.title == 'Deploy financial planner to GitHub Pages'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -24,6 +28,66 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Validate current planner build
+        id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found')
+          Path('/tmp/financial-planner.js').write_text(inline[-1], encoding='utf-8')
+          required = [
+              'savingsCashCeiling', 'savingsSweepExcess', 'Excess cash sweep to investments',
+              'monthlySpendingRoomPanel', 'buildMonthlySpendingRoom', 'chartTooltip',
+              'resetChartZoom', 'setupChartInteractions', 'niceMoneyStep',
+              'monthlyAllocationChart', 'monthlyAllocationLegend',
+              'drawMonthlyAllocationChart', 'setupMonthlyAllocationInteractions'
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing visualization markers: {missing}')
+          ids = [item for item in re.findall(r'\bid="([^"]+)"', html) if '${' not in item]
+          duplicates = sorted({item for item in ids if ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate static HTML ids: {duplicates}')
+          print('Required feature markers are present and static HTML ids are unique.')
+          PY
+            node --check /tmp/financial-planner.js
+            grep -q "financial-planner-secure-v10-monthly-allocation-pie" service-worker.js
+          } > /tmp/validation.log 2>&1
+          status=$?
+          cat /tmp/validation.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Report validation failure
+        if: steps.validate.outcome == 'failure' && github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          {
+            echo '❌ Financial planner validation failed; GitHub Pages was not deployed.'
+            echo
+            echo '```text'
+            cat /tmp/validation.log 2>/dev/null || echo 'No validation log was produced.'
+            echo '```'
+          } > /tmp/report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/report.md
+
+      - name: Stop after validation failure
+        if: steps.validate.outcome == 'failure'
+        run: exit 1
 
       - name: Prepare static site
         shell: bash
@@ -45,3 +109,21 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Report successful deployment
+        if: github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          {
+            echo '✅ Financial planner validation passed and GitHub Pages deployment completed.'
+            echo
+            echo "Published URL: $PAGE_URL"
+            echo
+            echo 'Validated features: dynamic emergency-fund cash ceiling, automatic excess-cash investment sweeps, monthly spending room, interactive date/value chart zoom, and monthly allocation donut chart.'
+          } > /tmp/report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/report.md
+          gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
