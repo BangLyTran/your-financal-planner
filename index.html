@@ -246,10 +246,16 @@
     .debt-deadline-panel-title { color:#92400e; font-weight:850; margin-bottom:4px; }
     .debt-deadline-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:12px; }
     .debt-term-badge { display:inline-flex; align-items:center; padding:3px 7px; border-radius:999px; background:#fef3c7; color:#92400e; font-size:.72rem; font-weight:800; margin-top:5px; }
+    .priority-badge { display:inline-flex; align-items:center; padding:3px 7px; border-radius:999px; background:#fee2e2; color:#991b1b; font-size:.72rem; font-weight:850; margin-top:5px; margin-left:5px; }
     .deadline-warning { color:#b45309; font-weight:750; }
+    .planner-protection-box { flex-basis:100%; display:grid; grid-template-columns:repeat(3,minmax(180px,1fr)); gap:12px; padding:14px; border:1px solid #fecaca; border-radius:14px; background:linear-gradient(135deg,#fff1f2,#fff); }
+    .planner-protection-title { grid-column:1 / -1; color:#991b1b; font-weight:850; }
+    .planner-protection-note { grid-column:1 / -1; color:#7f1d1d; font-size:.8rem; line-height:1.45; }
 
     @media (max-width: 1100px) {
       .debt-deadline-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .planner-protection-box { grid-template-columns:1fr; }
+      .planner-protection-title, .planner-protection-note { grid-column:1; }
       .debt-breakdown-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .two, .three { grid-template-columns: 1fr; }
@@ -434,7 +440,7 @@
         <div class="panel-head">
           <div>
             <h2>Debt payoff assistant</h2>
-            <div class="muted small">Generates interest-aware payments on paydays, highest APR first. It preserves your cash floor, reserves bills until the next paycheck, and can keep part of each safe surplus as additional savings.</div>
+            <div class="muted small">Builds payments on paydays using two layers: first it protects deadline and explicitly high-priority debts from avoidable penalties, then it applies the normal APR avalanche to remaining safe surplus.</div>
           </div>
         </div>
         <div class="inline-controls">
@@ -442,11 +448,18 @@
           <div><label>Maximum per payday</label><input id="planMaxPayment" type="number" step="100" value="5000" /></div>
           <div><label>Safe surplus sent to debt</label><input id="planAllocationPct" type="number" step="5" min="0" max="100" value="50" /><div class="muted small">Percent; 50% is balanced, 100% is aggressive.</div></div>
           <div><label>Minimum APR to target</label><input id="planMinApr" type="number" step="0.5" min="0" value="10" /><div class="muted small">A 10% threshold excludes your 0% student loan.</div></div>
-          <div><label>Debt scope</label><div class="check-row"><input id="planRevolvingOnly" type="checkbox" /> Only debts marked revolving/high-interest</div></div>
-          <div><button class="btn good" id="generateAvalanche">Generate balanced avalanche</button></div>
+          <div><label>Debt scope</label><div class="check-row"><input id="planRevolvingOnly" type="checkbox" /> Only ordinary avalanche debts marked revolving/high-interest</div></div>
+          <div class="planner-protection-box">
+            <div class="planner-protection-title">Deadline and high-priority protection</div>
+            <div><label>Enable smart protection</label><div class="check-row"><input id="planProtectUrgent" type="checkbox" checked /> Pay deadline/high-priority debt before the ordinary avalanche</div></div>
+            <div><label>Urgent-payment hard cash floor</label><input id="planUrgentCashFloor" type="number" step="100" min="0" value="2500" /><div class="muted small">The planner may dip below your normal cash floor, but not below this emergency floor.</div></div>
+            <div><label>Override per-payday maximum when required</label><div class="check-row"><input id="planUrgentOverrideMax" type="checkbox" checked /> Allow a larger payment when needed and affordable before a deadline</div></div>
+            <div class="planner-protection-note">Deadline and high-priority debts ignore the minimum-APR and revolving-only filters. The system pays them as early as practical while reserving bills until the next paycheck and preserving the urgent hard floor.</div>
+          </div>
+          <div><button class="btn good" id="generateAvalanche">Generate smart payoff plan</button></div>
           <div><button class="btn danger" id="removeAutoPayments">Remove generated payments</button></div>
         </div>
-        <div id="avalancheSummary" class="footer-note">Recommended starting point: $20,000 floor, 50% of safe surplus, and minimum APR of 10%. This pays costly debt while allowing cash to rise above the floor.</div>
+        <div id="avalancheSummary" class="footer-note">Smart protection uses a lower hard emergency floor only for deadline and explicitly high-priority debts. Ordinary debts still follow your normal cash floor, allocation percentage, APR threshold, and scope settings.</div>
       </div>
 
       <div class="panel">
@@ -461,7 +474,8 @@
             <div><label>APR before deadline %</label><input id="debtApr" type="number" step="0.01" min="0" required /></div>
             <div><label>Minimum monthly payment</label><input id="debtMinimum" type="number" step="0.01" min="0" value="0" /></div>
             <div><label>Deferred until</label><input id="debtDeferredUntil" type="date" /></div>
-            <div><label>Revolving/high-interest</label><div class="check-row"><input id="debtRevolving" type="checkbox" checked /> Mark as revolving/high-interest for optional planner filtering</div></div>
+            <div><label>Revolving/high-interest</label><div class="check-row"><input id="debtRevolving" type="checkbox" checked /> Mark as revolving/high-interest for optional ordinary-avalanche filtering</div></div>
+            <div><label>High priority</label><div class="check-row"><input id="debtPriority" type="checkbox" /> Pay as soon as practical using the urgent-payment safety floor</div><div class="muted small">Deadline debts are automatically treated as high priority.</div></div>
             <div id="debtDeadlineFields" class="debt-deadline-panel hidden">
               <div class="debt-deadline-panel-title">Deadline and missed-payment terms</div>
               <div class="muted small">If any balance remains after the deadline date, the planner applies the markup once to that remaining balance. Optional ongoing growth is treated as an annual APR after the deadline.</div>
@@ -635,7 +649,10 @@
       maxPerPayday: 5000,
       allocationPct: 50,
       minApr: 10,
-      revolvingOnly: false
+      revolvingOnly: false,
+      protectUrgent: true,
+      urgentCashFloor: 2500,
+      urgentOverrideMax: true
     },
     vehicle: {
       enabled:false,
@@ -1104,6 +1121,7 @@
   }
 
   function debtTypeOf(debt) { return debt?.debtType === 'deadline' ? 'deadline' : 'standard'; }
+  function isUrgentDebt(debt) { return debtTypeOf(debt)==='deadline' || Boolean(debt?.priority); }
   function postDeadlineApr(debt) {
     if (debtTypeOf(debt)!=='deadline' || !debt.continueAfterDeadline) return 0;
     return debt.postDeadlineMode==='custom' ? Math.max(0,Number(debt.postDeadlineApr)||0) : Math.max(0,Number(debt.deadlineMarkupPct)||0);
@@ -1234,6 +1252,9 @@
     document.getElementById('planAllocationPct').value = Number.isFinite(Number(p.allocationPct)) ? Number(p.allocationPct) : 50;
     document.getElementById('planMinApr').value = Number(p.minApr) || 0;
     document.getElementById('planRevolvingOnly').checked = Boolean(p.revolvingOnly);
+    document.getElementById('planProtectUrgent').checked = p.protectUrgent !== false;
+    document.getElementById('planUrgentCashFloor').value = Number.isFinite(Number(p.urgentCashFloor)) ? Number(p.urgentCashFloor) : 2500;
+    document.getElementById('planUrgentOverrideMax').checked = p.urgentOverrideMax !== false;
   }
 
   function renderAll() {
@@ -1327,8 +1348,8 @@
     const currentUSD=state.debts.reduce((sum,d)=>sum+toUSD(Number(d.balance)||0,d.currency),0);
     const currentCAD=fromUSD(currentUSD,'CAD');
     document.getElementById('currentDebtTotals').innerHTML=`<div><div class="current-debt-total-label">Total current debt</div><div class="current-debt-total-note">Sum of the balances entered below, before forecast interest and future payments.</div></div><div class="current-debt-total-values"><span class="current-debt-total-primary">${money2(currentUSD,'USD')}</span><span class="current-debt-total-secondary">${money2(currentCAD,'CAD')}</span></div>`;
-    document.getElementById('debtCards').innerHTML=projections.map(({d,p})=>{const opening=toUSD(d.balance,d.currency);const pct=opening?Math.min(100,p.balanceUSD/opening*100):0;return `<div class="card"><div class="label">${escapeHtml(d.name)}</div><div class="value ${debtPlannerRate(d,state.settings.targetDate)>=20?'warning':''}">${money(p.balanceUSD)}</div><div class="detail">${escapeHtml(debtTermsText(d))} · ${money(p.paymentsUSD)} paid</div>${debtTypeOf(d)==='deadline'?'<span class="debt-term-badge">Deadline debt</span>':''}<div class="debt-bar"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div></div>`}).join('');
-    document.getElementById('debtTable').innerHTML=projections.map(({d,p})=>`<tr><td>${escapeHtml(d.name)}${debtTypeOf(d)==='deadline'?'<br><span class="debt-term-badge">Deadline debt</span>':''}</td><td>${money2(d.balance,d.currency)}</td><td>${escapeHtml(debtTermsText(d))}</td><td>${money2(p.paymentsUSD)}</td><td>${money2(p.interestUSD)}</td><td>${money2(p.markupUSD||0)}</td><td><strong>${money2(p.balanceUSD)}</strong></td><td><button class="btn sm secondary" data-action="edit-debt" data-id="${d.id}">Edit</button> <button class="btn sm danger" data-action="delete-debt" data-id="${d.id}">Delete</button></td></tr>`).join('');
+    document.getElementById('debtCards').innerHTML=projections.map(({d,p})=>{const opening=toUSD(d.balance,d.currency);const pct=opening?Math.min(100,p.balanceUSD/opening*100):0;return `<div class="card"><div class="label">${escapeHtml(d.name)}</div><div class="value ${debtPlannerRate(d,state.settings.targetDate)>=20?'warning':''}">${money(p.balanceUSD)}</div><div class="detail">${escapeHtml(debtTermsText(d))} · ${money(p.paymentsUSD)} paid</div>${debtTypeOf(d)==='deadline'?'<span class="debt-term-badge">Deadline debt</span>':''}${d.priority&&debtTypeOf(d)!=='deadline'?'<span class="priority-badge">High priority</span>':''}<div class="debt-bar"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div></div>`}).join('');
+    document.getElementById('debtTable').innerHTML=projections.map(({d,p})=>`<tr><td>${escapeHtml(d.name)}${debtTypeOf(d)==='deadline'?'<br><span class="debt-term-badge">Deadline debt</span>':''}${d.priority&&debtTypeOf(d)!=='deadline'?'<br><span class="priority-badge">High priority</span>':''}</td><td>${money2(d.balance,d.currency)}</td><td>${escapeHtml(debtTermsText(d))}</td><td>${money2(p.paymentsUSD)}</td><td>${money2(p.interestUSD)}</td><td>${money2(p.markupUSD||0)}</td><td><strong>${money2(p.balanceUSD)}</strong></td><td><button class="btn sm secondary" data-action="edit-debt" data-id="${d.id}">Edit</button> <button class="btn sm danger" data-action="delete-debt" data-id="${d.id}">Delete</button></td></tr>`).join('');
   }
   function renderVehicle() {
     const v=state.vehicle,c=vehicleCalc();
@@ -1372,7 +1393,7 @@
     document.getElementById('debtPostAprWrap').classList.toggle('hidden',!isDeadline||!continuing||!custom);
     document.getElementById('debtDeadlineDate').required=isDeadline;
   }
-  function clearDebtForm(){document.getElementById('debtForm').reset();document.getElementById('debtId').value='';document.getElementById('debtRevolving').checked=true;document.getElementById('debtMinimum').value=0;document.getElementById('debtType').value='standard';document.getElementById('debtDeadlineMarkup').value=0;document.getElementById('debtPostDeadlineApr').value=0;updateDebtDeadlineVisibility();}
+  function clearDebtForm(){document.getElementById('debtForm').reset();document.getElementById('debtId').value='';document.getElementById('debtRevolving').checked=true;document.getElementById('debtPriority').checked=false;document.getElementById('debtMinimum').value=0;document.getElementById('debtType').value='standard';document.getElementById('debtDeadlineMarkup').value=0;document.getElementById('debtPostDeadlineApr').value=0;updateDebtDeadlineVisibility();}
 
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='dashboard')setTimeout(()=>renderDashboard(),20);}));
   document.getElementById('headerTarget').addEventListener('change',e=>{state.settings.targetDate=e.target.value;renderAll();});
@@ -1397,7 +1418,7 @@
   document.getElementById('clearIncome').addEventListener('click',clearIncomeForm);
   document.getElementById('billForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('billId').value||uid('bill');const obj={id,name:billName.value,startDate:billStart.value,endDate:billEnd.value,recurrence:billRecurrence.value,amount:Number(billAmount.value),currency:billCurrency.value,category:billCategory.value,debtId:billDebtId.value,active:billActive.checked,autoGenerated:false};const idx=state.bills.findIndex(x=>x.id===id);if(idx>=0)state.bills[idx]=obj;else state.bills.push(obj);clearBillForm();renderAll();});
   document.getElementById('clearBill').addEventListener('click',clearBillForm);
-  document.getElementById('debtForm').addEventListener('submit',e=>{e.preventDefault();const type=debtType.value;if(type==='deadline'&&!debtDeadlineDate.value){alert('Choose the date by which this debt must be paid.');return;}const id=document.getElementById('debtId').value||uid('debt');const obj={id,name:debtName.value,balance:Number(debtBalance.value),currency:debtCurrency.value,debtType:type,apr:Number(debtApr.value),minimum:Number(debtMinimum.value)||0,deferredUntil:debtDeferredUntil.value,revolving:debtRevolving.checked,deadlineDate:type==='deadline'?debtDeadlineDate.value:'',deadlineMarkupPct:type==='deadline'?(Number(debtDeadlineMarkup.value)||0):0,continueAfterDeadline:type==='deadline'&&debtContinueAfterDeadline.checked,postDeadlineMode:type==='deadline'?debtPostDeadlineMode.value:'same',postDeadlineApr:type==='deadline'?(Number(debtPostDeadlineApr.value)||0):0};const idx=state.debts.findIndex(x=>x.id===id);if(idx>=0)state.debts[idx]=obj;else state.debts.push(obj);clearDebtForm();renderAll();});
+  document.getElementById('debtForm').addEventListener('submit',e=>{e.preventDefault();const type=debtType.value;if(type==='deadline'&&!debtDeadlineDate.value){alert('Choose the date by which this debt must be paid.');return;}const id=document.getElementById('debtId').value||uid('debt');const obj={id,name:debtName.value,balance:Number(debtBalance.value),currency:debtCurrency.value,debtType:type,apr:Number(debtApr.value),minimum:Number(debtMinimum.value)||0,deferredUntil:debtDeferredUntil.value,revolving:debtRevolving.checked,priority:debtPriority.checked,deadlineDate:type==='deadline'?debtDeadlineDate.value:'',deadlineMarkupPct:type==='deadline'?(Number(debtDeadlineMarkup.value)||0):0,continueAfterDeadline:type==='deadline'&&debtContinueAfterDeadline.checked,postDeadlineMode:type==='deadline'?debtPostDeadlineMode.value:'same',postDeadlineApr:type==='deadline'?(Number(debtPostDeadlineApr.value)||0):0};const idx=state.debts.findIndex(x=>x.id===id);if(idx>=0)state.debts[idx]=obj;else state.debts.push(obj);clearDebtForm();renderAll();});
   document.getElementById('clearDebt').addEventListener('click',clearDebtForm);
   document.getElementById('debtType').addEventListener('change',updateDebtDeadlineVisibility);
   document.getElementById('debtContinueAfterDeadline').addEventListener('change',updateDebtDeadlineVisibility);
@@ -1409,7 +1430,7 @@
     if(action==='delete-income'&&confirm('Delete this income schedule?')){state.incomes=state.incomes.filter(x=>x.id!==id);renderAll();}
     if(action==='edit-bill'){const b=state.bills.find(x=>x.id===id);if(!b)return;billId.value=b.id;billName.value=b.name;billStart.value=b.startDate;billEnd.value=b.endDate||'';billRecurrence.value=b.recurrence;billAmount.value=b.amount;billCurrency.value=b.currency;billCategory.value=b.category;billDebtId.value=b.debtId||'';billActive.checked=b.active;document.querySelector('[data-tab="bills"]').click();window.scrollTo({top:0,behavior:'smooth'});}
     if(action==='delete-bill'&&confirm('Delete this bill or payment?')){state.bills=state.bills.filter(x=>x.id!==id);renderAll();}
-    if(action==='edit-debt'){const d=state.debts.find(x=>x.id===id);if(!d)return;debtId.value=d.id;debtName.value=d.name;debtBalance.value=d.balance;debtCurrency.value=d.currency;debtType.value=debtTypeOf(d);debtApr.value=d.apr;debtMinimum.value=d.minimum||0;debtDeferredUntil.value=d.deferredUntil||'';debtRevolving.checked=d.revolving;debtDeadlineDate.value=d.deadlineDate||'';debtDeadlineMarkup.value=d.deadlineMarkupPct||0;debtContinueAfterDeadline.checked=!!d.continueAfterDeadline;debtPostDeadlineMode.value=d.postDeadlineMode||'same';debtPostDeadlineApr.value=d.postDeadlineApr||0;updateDebtDeadlineVisibility();document.querySelector('[data-tab="debts"]').click();window.scrollTo({top:0,behavior:'smooth'});}
+    if(action==='edit-debt'){const d=state.debts.find(x=>x.id===id);if(!d)return;debtId.value=d.id;debtName.value=d.name;debtBalance.value=d.balance;debtCurrency.value=d.currency;debtType.value=debtTypeOf(d);debtApr.value=d.apr;debtMinimum.value=d.minimum||0;debtDeferredUntil.value=d.deferredUntil||'';debtRevolving.checked=d.revolving;debtPriority.checked=!!d.priority;debtDeadlineDate.value=d.deadlineDate||'';debtDeadlineMarkup.value=d.deadlineMarkupPct||0;debtContinueAfterDeadline.checked=!!d.continueAfterDeadline;debtPostDeadlineMode.value=d.postDeadlineMode||'same';debtPostDeadlineApr.value=d.postDeadlineApr||0;updateDebtDeadlineVisibility();document.querySelector('[data-tab="debts"]').click();window.scrollTo({top:0,behavior:'smooth'});}
     if(action==='delete-debt'&&confirm('Delete this debt and disconnect its scheduled payments?')){state.debts=state.debts.filter(x=>x.id!==id);state.bills.forEach(b=>{if(b.debtId===id)b.debtId='';});renderAll();}
   });
 
@@ -1423,11 +1444,14 @@
       maxPerPayday: Math.max(0, Number(document.getElementById('planMaxPayment').value) || 0),
       allocationPct: Math.min(100, Math.max(0, Number(document.getElementById('planAllocationPct').value) || 0)),
       minApr: Math.max(0, Number(document.getElementById('planMinApr').value) || 0),
-      revolvingOnly: document.getElementById('planRevolvingOnly').checked
+      revolvingOnly: document.getElementById('planRevolvingOnly').checked,
+      protectUrgent: document.getElementById('planProtectUrgent').checked,
+      urgentCashFloor: Math.max(0, Number(document.getElementById('planUrgentCashFloor').value) || 0),
+      urgentOverrideMax: document.getElementById('planUrgentOverrideMax').checked
     };
   }
 
-  ['planCashFloor','planMaxPayment','planAllocationPct','planMinApr','planRevolvingOnly'].forEach(id=>{
+  ['planCashFloor','planMaxPayment','planAllocationPct','planMinApr','planRevolvingOnly','planProtectUrgent','planUrgentCashFloor','planUrgentOverrideMax'].forEach(id=>{
     document.getElementById(id).addEventListener('change',()=>{
       state.debtPlanner = readDebtPlannerControls();
       saveState();
@@ -1446,6 +1470,7 @@
     state.debtPlanner = readDebtPlannerControls();
     const cfg=state.debtPlanner;
     const floor=cfg.cashFloor;
+    const urgentFloor=Math.min(floor,Math.max(0,Number(cfg.urgentCashFloor)||0));
     const maxPay=cfg.maxPerPayday>0?cfg.maxPerPayday:Infinity;
     const allocation=cfg.allocationPct/100;
     const baseEvents=buildEvents(state.settings.targetDate,true);
@@ -1458,52 +1483,103 @@
     state.debts.forEach(d=>debtState[d.id]={balanceUSD:toUSD(Number(d.balance)||0,d.currency),debt:d,interestUSD:0,markupUSD:0,currentDate:state.settings.forecastStart,deadlineMarkupApplied:false});
     let cash=Number(state.settings.startingCash)||0;
     let totalGenerated=0;
+    let urgentGenerated=0;
+    let ordinaryGenerated=0;
     let paymentCount=0;
     const targeted=new Set();
+    const urgentTargeted=new Set();
 
     const accrueTo=date=>{Object.values(debtState).forEach(x=>accrueDebtEntry(x,date));};
+    const addGeneratedPayment=(d,day,p,mode)=>{
+      if(p<=.01)return 0;
+      state.bills.push({id:uid('auto'),name:`${mode}: ${d.name}`,startDate:day,endDate:'',recurrence:'none',amount:Number(fromUSD(p,d.currency).toFixed(2)),currency:d.currency,category:'Debt payment',debtId:d.id,active:true,autoGenerated:true,priorityGenerated:mode!=='Auto avalanche'});
+      debtState[d.id].balanceUSD=Math.max(0,debtState[d.id].balanceUSD-p);
+      cash-=p;totalGenerated+=p;paymentCount++;targeted.add(d.name);
+      if(mode!=='Auto avalanche'){urgentGenerated+=p;urgentTargeted.add(d.name);}else ordinaryGenerated+=p;
+      return p;
+    };
+    const urgentSort=(a,b)=>{
+      const aDeadline=debtTypeOf(a)==='deadline'&&a.deadlineDate;
+      const bDeadline=debtTypeOf(b)==='deadline'&&b.deadlineDate;
+      if(aDeadline&&!bDeadline)return -1;
+      if(!aDeadline&&bDeadline)return 1;
+      if(aDeadline&&bDeadline){
+        const dateOrder=a.deadlineDate.localeCompare(b.deadlineDate);
+        if(dateOrder)return dateOrder;
+        const penaltyOrder=(Number(b.deadlineMarkupPct)||0)-(Number(a.deadlineMarkupPct)||0);
+        if(penaltyOrder)return penaltyOrder;
+      }
+      return debtPlannerRate(b,state.settings.forecastStart)-debtPlannerRate(a,state.settings.forecastStart)||(debtState[a.id].balanceUSD-debtState[b.id].balanceUSD);
+    };
 
     for(const day of dates){
       accrueTo(day);
       const dayEvents=eventsByDate.get(day)||[];
       dayEvents.forEach(e=>{
         cash+=e.amountUSD;
-        if(e.debtId && e.amountUSD<0 && debtState[e.debtId]){
-          debtState[e.debtId].balanceUSD=Math.max(0,debtState[e.debtId].balanceUSD-Math.abs(e.amountUSD));
-        }
+        if(e.debtId && e.amountUSD<0 && debtState[e.debtId]) debtState[e.debtId].balanceUSD=Math.max(0,debtState[e.debtId].balanceUSD-Math.abs(e.amountUSD));
       });
-      if(!paydaySet.has(day) || allocation<=0) continue;
+      if(!paydaySet.has(day)) continue;
       const idx=paydays.indexOf(day);
       const next=paydays[idx+1]||'9999-12-31';
       const futureBills=baseEvents.filter(e=>e.date>day&&e.date<next&&e.amountUSD<0).reduce((s,e)=>s+Math.abs(e.amountUSD),0);
+
+      if(cfg.protectUrgent){
+        let urgentAvailable=Math.max(0,cash-futureBills-urgentFloor);
+        if(!cfg.urgentOverrideMax)urgentAvailable=Math.min(maxPay,urgentAvailable);
+        const urgentDebts=state.debts.filter(d=>{
+          const current=debtState[d.id]?.balanceUSD||0;
+          const deferOk=!d.deferredUntil||d.deferredUntil<=day;
+          return current>.01&&deferOk&&isUrgentDebt(d);
+        }).sort(urgentSort);
+        for(const d of urgentDebts){
+          if(urgentAvailable<=.01)break;
+          const p=Math.min(urgentAvailable,debtState[d.id].balanceUSD);
+          const mode=debtTypeOf(d)==='deadline'?'Deadline protection':'Priority payoff';
+          urgentAvailable-=addGeneratedPayment(d,day,p,mode);
+        }
+      }
+
+      if(allocation<=0)continue;
       const safeSurplus=Math.max(0,cash-futureBills-floor);
       let available=Math.min(maxPay,safeSurplus*allocation);
       const eligible=state.debts.filter(d=>{
         const current=debtState[d.id]?.balanceUSD||0;
         const deferOk=!d.deferredUntil||d.deferredUntil<=day;
-        const aprOk=debtPlannerRate(d,day)>=cfg.minApr;
-        const scopeOk=!cfg.revolvingOnly||Boolean(d.revolving);
+        const urgencyExemption=cfg.protectUrgent&&isUrgentDebt(d);
+        const aprOk=urgencyExemption||debtPlannerRate(d,day)>=cfg.minApr;
+        const scopeOk=urgencyExemption||!cfg.revolvingOnly||Boolean(d.revolving);
         return current>.01&&deferOk&&aprOk&&scopeOk;
-      }).sort((a,b)=>debtPlannerRate(b,day)-debtPlannerRate(a,day)||((a.deadlineDate||'9999-12-31').localeCompare(b.deadlineDate||'9999-12-31'))||(debtState[a.id].balanceUSD-debtState[b.id].balanceUSD));
-
+      }).sort((a,b)=>{
+        if(isUrgentDebt(a)!==isUrgentDebt(b))return isUrgentDebt(a)?-1:1;
+        return debtPlannerRate(b,day)-debtPlannerRate(a,day)||((a.deadlineDate||'9999-12-31').localeCompare(b.deadlineDate||'9999-12-31'))||(debtState[a.id].balanceUSD-debtState[b.id].balanceUSD);
+      });
       for(const d of eligible){
-        if(available<=.01) break;
+        if(available<=.01)break;
         const p=Math.min(available,debtState[d.id].balanceUSD);
-        if(p<=.01) continue;
-        state.bills.push({id:uid('auto'),name:`Auto avalanche: ${d.name}`,startDate:day,endDate:'',recurrence:'none',amount:Number(fromUSD(p,d.currency).toFixed(2)),currency:d.currency,category:'Debt payment',debtId:d.id,active:true,autoGenerated:true});
-        debtState[d.id].balanceUSD=Math.max(0,debtState[d.id].balanceUSD-p);
-        available-=p;
-        cash-=p;
-        totalGenerated+=p;
-        paymentCount++;
-        targeted.add(d.name);
+        available-=addGeneratedPayment(d,day,p,'Auto avalanche');
       }
     }
+
+    const protectedDeadlines=[];
+    const atRiskDeadlines=[];
+    state.debts.filter(d=>debtTypeOf(d)==='deadline'&&d.deadlineDate).forEach(d=>{
+      const checkDate=toISO(addDays(parseDate(d.deadlineDate),1));
+      const check=simulateDebtPayments(checkDate).projections[d.id];
+      if(check&&check.payoffDate&&check.payoffDate<=d.deadlineDate&&(check.markupUSD||0)<=.005) protectedDeadlines.push(`${d.name} by ${fmtDate(check.payoffDate)}`);
+      else if(check&&check.balanceUSD>.005) atRiskDeadlines.push(`${d.name}: about ${money2(fromUSD(check.balanceUSD,d.currency),d.currency)} remains after ${fmtDate(d.deadlineDate)}`);
+    });
+
     renderAll();
-    const scope=cfg.revolvingOnly?'marked revolving/high-interest debts':`debts at or above ${cfg.minApr.toFixed(1)}% APR`;
-    document.getElementById('avalancheSummary').textContent=paymentCount
-      ?`Generated ${paymentCount} payment${paymentCount===1?'':'s'} totaling ${money(totalGenerated)} across ${[...targeted].join(', ')}. The plan sends ${cfg.allocationPct}% of safe surplus to ${scope}; the remainder stays as cash above your ${money(floor)} floor.`
-      :`No payment was generated. The forecast never produced eligible safe surplus above the ${money(floor)} floor, or no debt met the ${cfg.minApr.toFixed(1)}% APR threshold.`;
+    const scope=cfg.revolvingOnly?'ordinary debts marked revolving/high-interest':`ordinary debts at or above ${cfg.minApr.toFixed(1)}% APR`;
+    const parts=[];
+    if(paymentCount)parts.push(`Generated ${paymentCount} payment${paymentCount===1?'':'s'} totaling ${money(totalGenerated)} across ${[...targeted].join(', ')}.`);
+    if(urgentGenerated>0)parts.push(`Smart protection sends ${money(urgentGenerated)} to ${[...urgentTargeted].join(', ')} using the ${money(urgentFloor)} urgent hard floor instead of waiting for cash to exceed the normal ${money(floor)} floor.`);
+    if(ordinaryGenerated>0)parts.push(`The ordinary avalanche sends ${cfg.allocationPct}% of normal safe surplus to ${scope}, capped at ${money(maxPay)} per payday.`);
+    if(protectedDeadlines.length)parts.push(`Protected before deadline: ${protectedDeadlines.join('; ')}.`);
+    if(atRiskDeadlines.length)parts.push(`Still at risk: ${atRiskDeadlines.join('; ')}. The plan could not fully avoid the penalty while preserving upcoming bills and the ${money(urgentFloor)} hard floor; lower that floor, allow the max-payment override, reduce near-term spending, or add cash.`);
+    if(!parts.length)parts.push(`No payment was generated. There was no affordable surplus above the urgent ${money(urgentFloor)} floor or normal ${money(floor)} floor.`);
+    document.getElementById('avalancheSummary').textContent=parts.join(' ');
   });
 
 
