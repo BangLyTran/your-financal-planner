@@ -1336,8 +1336,22 @@
     }
     const calc=vehicleCalc();
     if (v.firstPaymentDate) {
-      const paymentItem={active:true,startDate:v.firstPaymentDate,endDate:'',recurrence:'monthly'};
-      generateDates(paymentItem,targetDate).forEach(date=>events.push({date,name:'GLE loan payment',type:'Vehicle',amountUSD:-calc.payment,source:'vehicle'}));
+      const termMonths=Math.max(0,Math.floor(Number(v.termMonths)||0));
+      const firstPayment=parseDate(v.firstPaymentDate);
+      for(let installment=0;installment<termMonths;installment++){
+        const paymentDate=addMonths(firstPayment,installment);
+        if(paymentDate>target)break;
+        if(paymentDate<start)continue;
+        events.push({
+          date:toISO(paymentDate),
+          name:'GLE loan payment',
+          type:'Vehicle',
+          amountUSD:-calc.payment,
+          source:'vehicle',
+          vehicleLoanPaymentNumber:installment+1,
+          vehicleLoanTermMonths:termMonths
+        });
+      }
     }
     if (v.purchaseDate) {
       const nextMonth=toISO(addMonths(parseDate(v.purchaseDate),1));
