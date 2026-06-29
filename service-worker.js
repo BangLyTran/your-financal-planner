@@ -1,4 +1,4 @@
-const CACHE = 'financial-planner-secure-v1';
+const CACHE = 'financial-planner-secure-v4-balanced';
 const APP_SHELL = ['./', './index.html', './cloud-config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', event => {

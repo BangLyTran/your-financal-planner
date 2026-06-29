@@ -353,16 +353,19 @@
         <div class="panel-head">
           <div>
             <h2>Debt payoff assistant</h2>
-            <div class="muted small">Generates payments on paydays using the highest APR first while preserving a cash floor and enough money for bills until the next paycheck.</div>
+            <div class="muted small">Generates interest-aware payments on paydays, highest APR first. It preserves your cash floor, reserves bills until the next paycheck, and can keep part of each safe surplus as additional savings.</div>
           </div>
         </div>
         <div class="inline-controls">
-          <div><label>Minimum cash floor</label><input id="planCashFloor" type="number" step="100" value="2500" /></div>
+          <div><label>Minimum cash floor</label><input id="planCashFloor" type="number" step="100" value="20000" /></div>
           <div><label>Maximum per payday</label><input id="planMaxPayment" type="number" step="100" value="5000" /></div>
-          <div><button class="btn good" id="generateAvalanche">Generate avalanche payments</button></div>
+          <div><label>Safe surplus sent to debt</label><input id="planAllocationPct" type="number" step="5" min="0" max="100" value="50" /><div class="muted small">Percent; 50% is balanced, 100% is aggressive.</div></div>
+          <div><label>Minimum APR to target</label><input id="planMinApr" type="number" step="0.5" min="0" value="10" /><div class="muted small">A 10% threshold excludes your 0% student loan.</div></div>
+          <div><label>Debt scope</label><div class="check-row"><input id="planRevolvingOnly" type="checkbox" /> Only debts marked revolving/high-interest</div></div>
+          <div><button class="btn good" id="generateAvalanche">Generate balanced avalanche</button></div>
           <div><button class="btn danger" id="removeAutoPayments">Remove generated payments</button></div>
         </div>
-        <div class="footer-note">The generated plan is a scenario, not an instruction to overdraft. Review the ledger before making real payments.</div>
+        <div id="avalancheSummary" class="footer-note">Recommended starting point: $20,000 floor, 50% of safe surplus, and minimum APR of 10%. This pays costly debt while allowing cash to rise above the floor.</div>
       </div>
 
       <div class="panel">
@@ -376,7 +379,7 @@
             <div><label>APR %</label><input id="debtApr" type="number" step="0.01" min="0" required /></div>
             <div><label>Minimum monthly payment</label><input id="debtMinimum" type="number" step="0.01" min="0" value="0" /></div>
             <div><label>Deferred until</label><input id="debtDeferredUntil" type="date" /></div>
-            <div><label>Revolving/high-interest</label><div class="check-row"><input id="debtRevolving" type="checkbox" checked /> Include in high-interest total</div></div>
+            <div><label>Revolving/high-interest</label><div class="check-row"><input id="debtRevolving" type="checkbox" checked /> Mark as revolving/high-interest for optional planner filtering</div></div>
           </div>
           <div class="actions"><button class="btn" type="submit">Save debt</button><button class="btn secondary" type="button" id="clearDebt">Clear form</button></div>
         </form>
@@ -533,6 +536,13 @@
     incomes: [],
     bills: [],
     debts: [],
+    debtPlanner: {
+      cashFloor: 20000,
+      maxPerPayday: 5000,
+      allocationPct: 50,
+      minApr: 10,
+      revolvingOnly: false
+    },
     vehicle: {
       enabled:false,
       purchaseDate:'2026-07-25',
@@ -564,6 +574,7 @@
     return Object.assign(clone(defaultState), parsed || {}, {
       settings: Object.assign({}, defaultState.settings, parsed?.settings || {}),
       vehicle: Object.assign({}, defaultState.vehicle, parsed?.vehicle || {}),
+      debtPlanner: Object.assign({}, defaultState.debtPlanner, parsed?.debtPlanner || {}),
       incomes: Array.isArray(parsed?.incomes) ? parsed.incomes : clone(defaultState.incomes),
       bills: Array.isArray(parsed?.bills) ? parsed.bills : clone(defaultState.bills),
       debts: Array.isArray(parsed?.debts) ? parsed.debts : clone(defaultState.debts)
@@ -1047,10 +1058,19 @@
     return {events,income,gross,outflows,cash,totalDebt,revolvingDebt,interest,debtProjections};
   }
 
+  function renderDebtPlannerControls() {
+    const p = state.debtPlanner || defaultState.debtPlanner;
+    document.getElementById('planCashFloor').value = Number(p.cashFloor) || 0;
+    document.getElementById('planMaxPayment').value = Number(p.maxPerPayday) || 0;
+    document.getElementById('planAllocationPct').value = Number.isFinite(Number(p.allocationPct)) ? Number(p.allocationPct) : 50;
+    document.getElementById('planMinApr').value = Number(p.minApr) || 0;
+    document.getElementById('planRevolvingOnly').checked = Boolean(p.revolvingOnly);
+  }
+
   function renderAll() {
     saveState();
     document.getElementById('headerTarget').value=state.settings.targetDate;
-    renderDashboard(); renderIncome(); renderBills(); renderDebts(); renderVehicle(); renderSettings(); populateDebtOptions();
+    renderDashboard(); renderIncome(); renderBills(); renderDebts(); renderVehicle(); renderSettings(); populateDebtOptions(); renderDebtPlannerControls();
   }
 
   function renderDashboard() {
@@ -1182,25 +1202,102 @@
   document.getElementById('vehicleForm').addEventListener('submit',e=>{e.preventDefault();state.vehicle={...state.vehicle,enabled:vehicleEnabled.checked,purchaseDate:vehiclePurchaseDate.value,price:Number(vehiclePrice.value),taxRate:Number(vehicleTaxRate.value),fees:Number(vehicleFees.value),downPayment:Number(vehicleDown.value),apr:Number(vehicleApr.value),termMonths:Number(vehicleTerm.value),firstPaymentDate:vehicleFirstPayment.value,insuranceMonthly:Number(vehicleInsurance.value),fuelMonthly:Number(vehicleFuel.value),maintenanceMonthly:Number(vehicleMaintenance.value)};renderAll();});
   document.getElementById('settingsForm').addEventListener('submit',e=>{e.preventDefault();state.settings={forecastStart:forecastStart.value,targetDate:targetDate.value,startingCash:Number(startingCash.value)||0,cadPerUsd:Number(cadPerUsd.value)||1.42,payPeriods:Number(payPeriods.value)||26,standardDeduction:Number(standardDeduction.value)||16100,ssRate:Number(ssRate.value)||0,medicareRate:Number(medicareRate.value)||0,ssWageBase:Number(ssWageBase.value)||184500,stateTaxRate:Number(stateTaxRate.value)||0,supplementalRate:Number(supplementalRate.value)||22};renderAll();});
 
-  document.getElementById('removeAutoPayments').addEventListener('click',()=>{state.bills=state.bills.filter(b=>!b.autoGenerated);renderAll();});
+  function readDebtPlannerControls() {
+    return {
+      cashFloor: Math.max(0, Number(document.getElementById('planCashFloor').value) || 0),
+      maxPerPayday: Math.max(0, Number(document.getElementById('planMaxPayment').value) || 0),
+      allocationPct: Math.min(100, Math.max(0, Number(document.getElementById('planAllocationPct').value) || 0)),
+      minApr: Math.max(0, Number(document.getElementById('planMinApr').value) || 0),
+      revolvingOnly: document.getElementById('planRevolvingOnly').checked
+    };
+  }
+
+  ['planCashFloor','planMaxPayment','planAllocationPct','planMinApr','planRevolvingOnly'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',()=>{
+      state.debtPlanner = readDebtPlannerControls();
+      saveState();
+    });
+  });
+
+  document.getElementById('removeAutoPayments').addEventListener('click',()=>{
+    const removed=state.bills.filter(b=>b.autoGenerated).length;
+    state.bills=state.bills.filter(b=>!b.autoGenerated);
+    renderAll();
+    document.getElementById('avalancheSummary').textContent=removed?`Removed ${removed} generated payment${removed===1?'':'s'}.`:'There were no generated payments to remove.';
+  });
+
   document.getElementById('generateAvalanche').addEventListener('click',()=>{
     state.bills=state.bills.filter(b=>!b.autoGenerated);
-    const floor=Math.max(0,Number(planCashFloor.value)||0),maxPay=Math.max(0,Number(planMaxPayment.value)||Infinity);
-    const baseEvents=buildEvents(state.settings.targetDate,false);
+    state.debtPlanner = readDebtPlannerControls();
+    const cfg=state.debtPlanner;
+    const floor=cfg.cashFloor;
+    const maxPay=cfg.maxPerPayday>0?cfg.maxPerPayday:Infinity;
+    const allocation=cfg.allocationPct/100;
+    const baseEvents=buildEvents(state.settings.targetDate,true);
     const paydays=[...new Set(baseEvents.filter(e=>e.source==='income').map(e=>e.date))].sort();
-    const balances={};state.debts.forEach(d=>balances[d.id]=toUSD(d.balance,d.currency));
+    const paydaySet=new Set(paydays);
+    const eventsByDate=new Map();
+    baseEvents.forEach(e=>{if(!eventsByDate.has(e.date))eventsByDate.set(e.date,[]);eventsByDate.get(e.date).push(e);});
+    const dates=[...eventsByDate.keys()].sort();
+    const debtState={};
+    state.debts.forEach(d=>debtState[d.id]={balanceUSD:toUSD(Number(d.balance)||0,d.currency),debt:d});
     let cash=Number(state.settings.startingCash)||0;
-    for(let i=0;i<paydays.length;i++){
-      const day=paydays[i],next=paydays[i+1]||'9999-12-31';
-      baseEvents.filter(e=>e.date<day).forEach(()=>{});
-      const dayEvents=baseEvents.filter(e=>e.date===day);dayEvents.forEach(e=>cash+=e.amountUSD);
+    let lastDate=state.settings.forecastStart;
+    let totalGenerated=0;
+    let paymentCount=0;
+    const targeted=new Set();
+
+    const accrueTo=date=>{
+      const days=Math.max(0,daysBetween(lastDate,date));
+      if(days>0){
+        Object.values(debtState).forEach(x=>{
+          if(x.balanceUSD>0 && Number(x.debt.apr)>0) x.balanceUSD += x.balanceUSD*(Number(x.debt.apr)/100)*days/365;
+        });
+      }
+      lastDate=date;
+    };
+
+    for(const day of dates){
+      accrueTo(day);
+      const dayEvents=eventsByDate.get(day)||[];
+      dayEvents.forEach(e=>{
+        cash+=e.amountUSD;
+        if(e.debtId && e.amountUSD<0 && debtState[e.debtId]){
+          debtState[e.debtId].balanceUSD=Math.max(0,debtState[e.debtId].balanceUSD-Math.abs(e.amountUSD));
+        }
+      });
+      if(!paydaySet.has(day) || allocation<=0) continue;
+      const idx=paydays.indexOf(day);
+      const next=paydays[idx+1]||'9999-12-31';
       const futureBills=baseEvents.filter(e=>e.date>day&&e.date<next&&e.amountUSD<0).reduce((s,e)=>s+Math.abs(e.amountUSD),0);
-      let available=Math.min(maxPay,Math.max(0,cash-futureBills-floor));
-      const eligible=state.debts.filter(d=>(!d.deferredUntil||d.deferredUntil<=day)&&balances[d.id]>0).sort((a,b)=>b.apr-a.apr);
-      for(const d of eligible){if(available<=.01)break;const p=Math.min(available,balances[d.id]);if(p<=.01)continue;state.bills.push({id:uid('auto'),name:`Auto avalanche: ${d.name}`,startDate:day,endDate:'',recurrence:'none',amount:Number(fromUSD(p,d.currency).toFixed(2)),currency:d.currency,category:'Debt payment',debtId:d.id,active:true,autoGenerated:true});balances[d.id]-=p;available-=p;cash-=p;}
-      const intervalEvents=baseEvents.filter(e=>e.date>day&&e.date<next);intervalEvents.forEach(e=>cash+=e.amountUSD);
+      const safeSurplus=Math.max(0,cash-futureBills-floor);
+      let available=Math.min(maxPay,safeSurplus*allocation);
+      const eligible=state.debts.filter(d=>{
+        const current=debtState[d.id]?.balanceUSD||0;
+        const deferOk=!d.deferredUntil||d.deferredUntil<=day;
+        const aprOk=Number(d.apr)>=cfg.minApr;
+        const scopeOk=!cfg.revolvingOnly||Boolean(d.revolving);
+        return current>.01&&deferOk&&aprOk&&scopeOk;
+      }).sort((a,b)=>Number(b.apr)-Number(a.apr)||(debtState[a.id].balanceUSD-debtState[b.id].balanceUSD));
+
+      for(const d of eligible){
+        if(available<=.01) break;
+        const p=Math.min(available,debtState[d.id].balanceUSD);
+        if(p<=.01) continue;
+        state.bills.push({id:uid('auto'),name:`Auto avalanche: ${d.name}`,startDate:day,endDate:'',recurrence:'none',amount:Number(fromUSD(p,d.currency).toFixed(2)),currency:d.currency,category:'Debt payment',debtId:d.id,active:true,autoGenerated:true});
+        debtState[d.id].balanceUSD=Math.max(0,debtState[d.id].balanceUSD-p);
+        available-=p;
+        cash-=p;
+        totalGenerated+=p;
+        paymentCount++;
+        targeted.add(d.name);
+      }
     }
     renderAll();
+    const scope=cfg.revolvingOnly?'marked revolving/high-interest debts':`debts at or above ${cfg.minApr.toFixed(1)}% APR`;
+    document.getElementById('avalancheSummary').textContent=paymentCount
+      ?`Generated ${paymentCount} payment${paymentCount===1?'':'s'} totaling ${money(totalGenerated)} across ${[...targeted].join(', ')}. The plan sends ${cfg.allocationPct}% of safe surplus to ${scope}; the remainder stays as cash above your ${money(floor)} floor.`
+      :`No payment was generated. The forecast never produced eligible safe surplus above the ${money(floor)} floor, or no debt met the ${cfg.minApr.toFixed(1)}% APR threshold.`;
   });
 
 
