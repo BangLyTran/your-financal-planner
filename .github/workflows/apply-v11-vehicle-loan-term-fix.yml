@@ -1,0 +1,124 @@
+name: Apply v11 vehicle loan term fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v11-vehicle-loan-term-fix.yml'
+      - 'scripts/apply_v11_vehicle_loan_term_fix.py'
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  migrate:
+    if: github.event_name != 'issues' || github.event.issue.title == 'Run vehicle loan term fix'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply vehicle-loan migration
+        id: migration
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m py_compile scripts/apply_v11_vehicle_loan_term_fix.py
+            python scripts/apply_v11_vehicle_loan_term_fix.py
+            python - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          service = Path('service-worker.js').read_text(encoding='utf-8')
+
+          required = [
+              'const termMonths=Math.max(0,Math.floor(Number(v.termMonths)||0));',
+              'for(let installment=0;installment<termMonths;installment++)',
+              'vehicleLoanPaymentNumber:installment+1',
+              'vehicleLoanTermMonths:termMonths',
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing vehicle-term markers: {missing}')
+          if "const paymentItem={active:true,startDate:v.firstPaymentDate,endDate:'',recurrence:'monthly'};" in html:
+              raise SystemExit('Open-ended vehicle loan recurrence still exists.')
+          if 'financial-planner-secure-v11-vehicle-loan-term-fix' not in service:
+              raise SystemExit('v11 service-worker cache marker is missing.')
+
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found.')
+          Path('/tmp/financial-planner-v11.js').write_text(inline[-1], encoding='utf-8')
+          print('Vehicle-loan source validation passed.')
+          PY
+            node --check /tmp/financial-planner-v11.js
+            node - <<'JS'
+          function parseDate(s){return new Date(`${s}T00:00:00`)}
+          function addMonths(date,months){const d=new Date(date);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+months);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return d}
+          function toISO(d){return d.toISOString().slice(0,10)}
+          const first=parseDate('2026-08-25');
+          const term=48;
+          const dates=[];
+          for(let installment=0;installment<term;installment++)dates.push(toISO(addMonths(first,installment)));
+          if(dates.length!==48)throw new Error(`Expected 48 payments, got ${dates.length}`);
+          if(dates[0]!=='2026-08-25')throw new Error(`Unexpected first payment ${dates[0]}`);
+          if(dates[47]!=='2030-07-25')throw new Error(`Unexpected final payment ${dates[47]}`);
+          if(dates.includes('2030-08-25'))throw new Error('A 49th payment was generated.');
+          console.log(`Schedule test passed: ${dates.length} payments from ${dates[0]} through ${dates[47]}.`);
+          JS
+          } > /tmp/vehicle-term-fix.log 2>&1
+          status=$?
+          cat /tmp/vehicle-term-fix.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Commit corrected application
+        if: steps.migration.outcome == 'success'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No app changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Stop vehicle loan payments at the selected term'
+          git push origin HEAD:main
+
+      - name: Report result
+        if: always() && github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+        run: |
+          {
+            if [ "$MIGRATION_OUTCOME" = "success" ]; then
+              echo '✅ Vehicle loan term fix completed successfully.'
+            else
+              echo '❌ Vehicle loan term fix failed.'
+            fi
+            echo
+            echo '```text'
+            tail -n 80 /tmp/vehicle-term-fix.log 2>/dev/null || echo 'No validation log was produced.'
+            echo '```'
+          } > /tmp/issue-report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/issue-report.md
+          if [ "$MIGRATION_OUTCOME" = "success" ]; then
+            gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi
+
+      - name: Fail workflow when migration failed
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
