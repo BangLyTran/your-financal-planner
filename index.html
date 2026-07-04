@@ -313,9 +313,16 @@
     .allocation-percent { min-width:48px; text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
     .allocation-empty { display:grid; place-items:center; min-height:270px; color:var(--muted); text-align:center; padding:20px; }
     .allocation-note { margin-top:9px; color:var(--muted); font-size:.76rem; line-height:1.45; }
+    .cash-balance-panel { margin-bottom:16px; border-color:#bfdbfe; background:linear-gradient(135deg,#eff6ff,#fff); }
+    .cash-balance-layout { display:grid; grid-template-columns:minmax(220px,.75fr) minmax(420px,1.25fr); gap:18px; align-items:end; }
+    .cash-balance-title { margin:0 0 5px; }
+    .cash-balance-entry { display:grid; grid-template-columns:minmax(180px,1fr) 120px auto; gap:10px; align-items:end; }
+    .cash-equivalent { margin-top:7px; color:#1e40af; font-size:.8rem; font-weight:750; }
+    .cash-field-note { margin-top:5px; color:var(--muted); font-size:.76rem; line-height:1.4; }
 
     @media (max-width: 1100px) {
       .monthly-allocation-layout { grid-template-columns:1fr; }
+      .cash-balance-layout { grid-template-columns:1fr; }
       .debt-deadline-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .planner-protection-box { grid-template-columns:1fr; }
       .planner-protection-title, .planner-protection-note { grid-column:1; }
@@ -329,6 +336,7 @@
     @media (max-width: 650px) {
       header, main, nav { padding-left: 14px; padding-right: 14px; }
       .cards, form .form-grid { grid-template-columns: 1fr; }
+      .cash-balance-entry { grid-template-columns:1fr; }
       .target-box { width: 100%; }
       .target-box input { flex: 1; }
       .card { min-height: auto; }
@@ -382,6 +390,22 @@
   <main>
     <section id="dashboard" class="tab active">
       <div id="riskNotice"></div>
+      <div class="panel cash-balance-panel">
+        <div class="cash-balance-layout">
+          <div>
+            <h2 class="cash-balance-title">Current cash balance</h2>
+            <div class="muted small">Enter the cash available at the forecast start date. Choose USD or CAD; the planner converts CAD using your saved exchange-rate assumption.</div>
+          </div>
+          <form id="quickCashForm">
+            <div class="cash-balance-entry">
+              <div><label for="quickCashAmount">Cash amount</label><input id="quickCashAmount" type="number" step="0.01" inputmode="decimal" /></div>
+              <div><label for="quickCashCurrency">Currency</label><select id="quickCashCurrency"><option value="USD">USD</option><option value="CAD">CAD</option></select></div>
+              <button class="btn" type="submit">Update cash</button>
+            </div>
+            <div class="cash-equivalent" id="currentCashEquivalent"></div>
+          </form>
+        </div>
+      </div>
       <div class="grid cards">
         <div class="card">
           <div class="label">Cash on target date</div>
@@ -763,7 +787,8 @@
           <div class="form-grid">
             <div><label>Forecast start date</label><input id="forecastStart" type="date" /></div>
             <div><label>Target date</label><input id="targetDate" type="date" /></div>
-            <div><label>Starting available cash</label><input id="startingCash" type="number" step="0.01" /></div>
+            <div><label>Current / starting cash balance</label><input id="startingCash" type="number" step="0.01" inputmode="decimal" /><div class="cash-field-note">Opening cash available on the forecast start date.</div><div class="cash-equivalent" id="startingCashEquivalent"></div></div>
+            <div><label>Cash balance currency</label><select id="startingCashCurrency"><option value="USD">USD</option><option value="CAD">CAD</option></select><div class="cash-field-note">CAD is converted to USD for all calculations.</div></div>
             <div><label>CAD per USD</label><input id="cadPerUsd" type="number" step="0.0001" /></div>
             <div><label>Pay periods per year</label><input id="payPeriods" type="number" step="1" /></div>
             <div><label>2026 standard deduction</label><input id="standardDeduction" type="number" step="1" /></div>
@@ -808,6 +833,7 @@
       forecastStart: isoToday,
       targetDate: '2026-08-31',
       startingCash: 0,
+      startingCashCurrency: 'USD',
       cadPerUsd: 1.42,
       payPeriods: 26,
       standardDeduction: 16100,
@@ -899,6 +925,46 @@
       debts: Array.isArray(parsed?.debts) ? parsed.debts : clone(defaultState.debts)
     });
   }
+  function cashCurrencyOf(settings=state?.settings||defaultState.settings) {
+    return settings?.startingCashCurrency==='CAD'?'CAD':'USD';
+  }
+  function cashAmountToUSD(amount,currency,rate=state?.settings?.cadPerUsd||defaultState.settings.cadPerUsd) {
+    const value=Number(amount)||0;
+    const fx=Math.max(.000001,Number(rate)||1.42);
+    return currency==='CAD'?value/fx:value;
+  }
+  function cashAmountFromUSD(amountUSD,currency,rate=state?.settings?.cadPerUsd||defaultState.settings.cadPerUsd) {
+    const value=Number(amountUSD)||0;
+    const fx=Math.max(.000001,Number(rate)||1.42);
+    return currency==='CAD'?value*fx:value;
+  }
+  function roundedCashInput(value) {
+    return Number((Number(value)||0).toFixed(2));
+  }
+  function cashEquivalentLabel(amount,currency,rate) {
+    const usd=cashAmountToUSD(amount,currency,rate);
+    const fx=Math.max(.000001,Number(rate)||1.42);
+    return currency==='CAD'
+      ? `${money2(usd,'USD')} used as the opening USD balance`
+      : `${money2(usd*fx,'CAD')} equivalent at C$${fx.toFixed(4)} per US$1`;
+  }
+  function convertCashEntry(amountElement,currencyElement,rate) {
+    const previous=currencyElement.dataset.previousCurrency||'USD';
+    const next=currencyElement.value==='CAD'?'CAD':'USD';
+    const usd=cashAmountToUSD(amountElement.value,previous,rate);
+    amountElement.value=roundedCashInput(cashAmountFromUSD(usd,next,rate));
+    currencyElement.dataset.previousCurrency=next;
+  }
+  function refreshCashEquivalentLabels() {
+    const quickAmount=document.getElementById('quickCashAmount');
+    const quickCurrency=document.getElementById('quickCashCurrency');
+    if(quickAmount&&quickCurrency)document.getElementById('currentCashEquivalent').textContent=cashEquivalentLabel(quickAmount.value,quickCurrency.value,state.settings.cadPerUsd);
+    const settingsAmount=document.getElementById('startingCash');
+    const settingsCurrency=document.getElementById('startingCashCurrency');
+    const settingsRate=document.getElementById('cadPerUsd');
+    if(settingsAmount&&settingsCurrency&&settingsRate)document.getElementById('startingCashEquivalent').textContent=cashEquivalentLabel(settingsAmount.value,settingsCurrency.value,settingsRate.value);
+  }
+
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -1694,10 +1760,16 @@
 
   function renderDashboard() {
     const s=getSummary();
+    const openingCurrency=cashCurrencyOf();
+    const openingDisplay=roundedCashInput(cashAmountFromUSD(state.settings.startingCash,openingCurrency,state.settings.cadPerUsd));
+    document.getElementById('quickCashAmount').value=openingDisplay;
+    document.getElementById('quickCashCurrency').value=openingCurrency;
+    document.getElementById('quickCashCurrency').dataset.previousCurrency=openingCurrency;
+    refreshCashEquivalentLabels();
     const cashEl=document.getElementById('cashTarget');
     cashEl.textContent=money(s.cash);
     cashEl.className=`value ${s.cash>=0?'positive':'negative'}`;
-    document.getElementById('cashTargetDetail').textContent=`Spendable cash only · starting cash ${money(state.settings.startingCash)} · ${fmtDate(state.settings.targetDate)}`;
+    document.getElementById('cashTargetDetail').textContent=`Spendable cash only · opening cash ${money(state.settings.startingCash)} USD${openingCurrency==='CAD'?` (entered as ${money2(openingDisplay,'CAD')})`:''} · ${fmtDate(state.settings.targetDate)}`;
     document.getElementById('netIncome').textContent=money(s.income);
     document.getElementById('grossIncomeDetail').textContent=`From ${money(s.gross)} gross income`;
     document.getElementById('cashOutflows').textContent=money(s.outflows);
@@ -2334,7 +2406,22 @@
   }
   function renderSettings() {
     const s=state.settings;
-    document.getElementById('forecastStart').value=s.forecastStart;document.getElementById('targetDate').value=s.targetDate;document.getElementById('startingCash').value=s.startingCash;document.getElementById('cadPerUsd').value=s.cadPerUsd;document.getElementById('payPeriods').value=s.payPeriods;document.getElementById('standardDeduction').value=s.standardDeduction;document.getElementById('ssRate').value=s.ssRate;document.getElementById('medicareRate').value=s.medicareRate;document.getElementById('ssWageBase').value=s.ssWageBase;document.getElementById('stateTaxRate').value=s.stateTaxRate;document.getElementById('supplementalRate').value=s.supplementalRate;
+    const currency=cashCurrencyOf(s);
+    const displayAmount=roundedCashInput(cashAmountFromUSD(s.startingCash,currency,s.cadPerUsd));
+    document.getElementById('forecastStart').value=s.forecastStart;
+    document.getElementById('targetDate').value=s.targetDate;
+    document.getElementById('startingCash').value=displayAmount;
+    document.getElementById('startingCashCurrency').value=currency;
+    document.getElementById('startingCashCurrency').dataset.previousCurrency=currency;
+    document.getElementById('cadPerUsd').value=s.cadPerUsd;
+    document.getElementById('payPeriods').value=s.payPeriods;
+    document.getElementById('standardDeduction').value=s.standardDeduction;
+    document.getElementById('ssRate').value=s.ssRate;
+    document.getElementById('medicareRate').value=s.medicareRate;
+    document.getElementById('ssWageBase').value=s.ssWageBase;
+    document.getElementById('stateTaxRate').value=s.stateTaxRate;
+    document.getElementById('supplementalRate').value=s.supplementalRate;
+    refreshCashEquivalentLabels();
   }
   function populateDebtOptions() {
     const select=document.getElementById('billDebtId'); const current=select.value;
@@ -2358,6 +2445,12 @@
 
   document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='dashboard')setTimeout(()=>renderDashboard(),20);}));
   document.getElementById('headerTarget').addEventListener('change',e=>{state.settings.targetDate=e.target.value;renderAll();});
+  document.getElementById('quickCashForm').addEventListener('submit',e=>{e.preventDefault();const currency=quickCashCurrency.value==='CAD'?'CAD':'USD';state.settings.startingCash=cashAmountToUSD(quickCashAmount.value,currency,state.settings.cadPerUsd);state.settings.startingCashCurrency=currency;renderAll();});
+  document.getElementById('quickCashCurrency').addEventListener('change',()=>{convertCashEntry(quickCashAmount,quickCashCurrency,state.settings.cadPerUsd);refreshCashEquivalentLabels();});
+  document.getElementById('quickCashAmount').addEventListener('input',refreshCashEquivalentLabels);
+  document.getElementById('startingCashCurrency').addEventListener('change',()=>{convertCashEntry(startingCash,startingCashCurrency,Number(cadPerUsd.value)||state.settings.cadPerUsd);refreshCashEquivalentLabels();});
+  document.getElementById('startingCash').addEventListener('input',refreshCashEquivalentLabels);
+  document.getElementById('cadPerUsd').addEventListener('input',refreshCashEquivalentLabels);
   window.addEventListener('resize',()=>{if(document.getElementById('dashboard').classList.contains('active')){const summary=getSummary();drawCashChart(summary);const months=buildMonthlySpendingRoom(summary);const selected=months.find(m=>m.key===selectedMonthlyRoomKey)||months[0];if(selected)drawMonthlyAllocationChart(selected);}});
   document.getElementById('chartModeToggle').addEventListener('click',e=>{const btn=e.target.closest('[data-chart-mode]');if(!btn)return;state.savings={...defaultState.savings,...state.savings,chartMode:btn.dataset.chartMode};renderDashboard();saveState();});
   setupChartInteractions();
@@ -2416,7 +2509,7 @@
 
   document.getElementById('vehicleEnabled').addEventListener('change',e=>{state.vehicle.enabled=e.target.checked;renderAll();});
   document.getElementById('vehicleForm').addEventListener('submit',e=>{e.preventDefault();state.vehicle={...state.vehicle,enabled:vehicleEnabled.checked,purchaseDate:vehiclePurchaseDate.value,price:Number(vehiclePrice.value),taxRate:Number(vehicleTaxRate.value),fees:Number(vehicleFees.value),downPayment:Number(vehicleDown.value),apr:Number(vehicleApr.value),termMonths:Number(vehicleTerm.value),firstPaymentDate:vehicleFirstPayment.value,insuranceMonthly:Number(vehicleInsurance.value),fuelMonthly:Number(vehicleFuel.value),maintenanceMonthly:Number(vehicleMaintenance.value)};renderAll();});
-  document.getElementById('settingsForm').addEventListener('submit',e=>{e.preventDefault();state.settings={forecastStart:forecastStart.value,targetDate:targetDate.value,startingCash:Number(startingCash.value)||0,cadPerUsd:Number(cadPerUsd.value)||1.42,payPeriods:Number(payPeriods.value)||26,standardDeduction:Number(standardDeduction.value)||16100,ssRate:Number(ssRate.value)||0,medicareRate:Number(medicareRate.value)||0,ssWageBase:Number(ssWageBase.value)||184500,stateTaxRate:Number(stateTaxRate.value)||0,supplementalRate:Number(supplementalRate.value)||22};renderAll();});
+  document.getElementById('settingsForm').addEventListener('submit',e=>{e.preventDefault();const rate=Number(cadPerUsd.value)||1.42;const currency=startingCashCurrency.value==='CAD'?'CAD':'USD';state.settings={forecastStart:forecastStart.value,targetDate:targetDate.value,startingCash:cashAmountToUSD(startingCash.value,currency,rate),startingCashCurrency:currency,cadPerUsd:rate,payPeriods:Number(payPeriods.value)||26,standardDeduction:Number(standardDeduction.value)||16100,ssRate:Number(ssRate.value)||0,medicareRate:Number(medicareRate.value)||0,ssWageBase:Number(ssWageBase.value)||184500,stateTaxRate:Number(stateTaxRate.value)||0,supplementalRate:Number(supplementalRate.value)||22};renderAll();});
 
   function readDebtPlannerControls() {
     return {

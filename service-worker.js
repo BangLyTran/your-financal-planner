@@ -1,4 +1,4 @@
-const CACHE = 'financial-planner-secure-v11-vehicle-loan-term-fix';
+const CACHE = 'financial-planner-secure-v12-current-cash-currency';
 const APP_SHELL = ['./', './index.html', './cloud-config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', event => {
