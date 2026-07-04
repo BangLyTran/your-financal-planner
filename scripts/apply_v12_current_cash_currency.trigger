@@ -1,0 +1,1 @@
+Run v12 current cash balance migration.
