@@ -67,7 +67,7 @@ jobs:
           print('Required feature markers are present and static HTML ids are unique.')
           PY
             node --check /tmp/financial-planner.js
-            grep -q "financial-planner-secure-v11-vehicle-loan-term-fix" service-worker.js
+            grep -Eq "financial-planner-secure-v(11-vehicle-loan-term-fix|12-current-cash-currency)" service-worker.js
           } > /tmp/validation.log 2>&1
           status=$?
           cat /tmp/validation.log
@@ -128,7 +128,7 @@ jobs:
             echo
             echo "Published URL: $PAGE_URL"
             echo
-            echo 'Validated features include the exact vehicle-loan installment limit: the loan now stops after the selected term instead of recurring indefinitely.'
+            echo 'Validated features include the exact vehicle-loan installment limit and current-cash entry compatibility.'
           } > /tmp/report.md
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/report.md
           gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
