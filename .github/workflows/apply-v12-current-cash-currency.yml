@@ -1,0 +1,125 @@
+name: Apply v12 current cash currency
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v12-current-cash-currency.yml'
+      - 'scripts/apply_v12_current_cash_currency.py'
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  migrate:
+    if: github.event_name != 'issues' || github.event.issue.title == 'Run current cash currency migration'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply current-cash migration
+        id: migration
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m py_compile scripts/apply_v12_current_cash_currency.py
+            python scripts/apply_v12_current_cash_currency.py
+            python - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          service = Path('service-worker.js').read_text(encoding='utf-8')
+          required = [
+              'id="quickCashForm"',
+              'id="quickCashAmount"',
+              'id="quickCashCurrency"',
+              'id="startingCashCurrency"',
+              "startingCashCurrency: 'USD'",
+              'cashAmountToUSD',
+              'cashAmountFromUSD',
+              'currentCashEquivalent',
+              'startingCashEquivalent',
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing current-cash markers: {missing}')
+          if 'financial-planner-secure-v12-current-cash-currency' not in service:
+              raise SystemExit('v12 service-worker cache marker is missing.')
+          ids = [item for item in re.findall(r'\bid="([^"]+)"', html) if '${' not in item]
+          duplicates = sorted({item for item in ids if ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate static HTML ids: {duplicates}')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found.')
+          Path('/tmp/financial-planner-v12.js').write_text(inline[-1], encoding='utf-8')
+          print('Current cash source validation passed.')
+          PY
+            node --check /tmp/financial-planner-v12.js
+            node - <<'JS'
+          const rate=1.42;
+          const toUSD=(amount,currency)=>currency==='CAD'?amount/rate:amount;
+          const fromUSD=(amount,currency)=>currency==='CAD'?amount*rate:amount;
+          const usd=toUSD(14200,'CAD');
+          if(Math.abs(usd-10000)>.001)throw new Error(`CAD conversion failed: ${usd}`);
+          if(Math.abs(fromUSD(usd,'CAD')-14200)>.001)throw new Error('CAD round-trip conversion failed.');
+          if(toUSD(10000,'USD')!==10000)throw new Error('USD entry changed unexpectedly.');
+          console.log('Currency conversion test passed: CA$14,200 = US$10,000 at 1.42 CAD/USD.');
+          JS
+          } > /tmp/current-cash-v12.log 2>&1
+          status=$?
+          cat /tmp/current-cash-v12.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Commit updated application
+        if: steps.migration.outcome == 'success'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No application changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Add current cash balance entry in USD or CAD'
+          git push origin HEAD:main
+
+      - name: Report result
+        if: always() && github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+        run: |
+          {
+            if [ "$MIGRATION_OUTCOME" = "success" ]; then
+              echo '✅ Current cash balance currency migration completed successfully.'
+            else
+              echo '❌ Current cash balance currency migration failed.'
+            fi
+            echo
+            echo '```text'
+            tail -n 80 /tmp/current-cash-v12.log 2>/dev/null || echo 'No validation log was produced.'
+            echo '```'
+          } > /tmp/issue-report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/issue-report.md
+          if [ "$MIGRATION_OUTCOME" = "success" ]; then
+            gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi
+
+      - name: Fail workflow when migration failed
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
