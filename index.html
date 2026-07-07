@@ -319,10 +319,26 @@
     .cash-balance-entry { display:grid; grid-template-columns:minmax(180px,1fr) 120px auto; gap:10px; align-items:end; }
     .cash-equivalent { margin-top:7px; color:#1e40af; font-size:.8rem; font-weight:750; }
     .cash-field-note { margin-top:5px; color:var(--muted); font-size:.76rem; line-height:1.4; }
+    .wealth-overview-panel { margin-bottom:16px; border-color:#a7f3d0; background:linear-gradient(135deg,#ecfdf5 0%,#ffffff 58%,#eff6ff 100%); }
+    .wealth-overview-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; }
+    .wealth-overview-main { min-width:250px; }
+    .wealth-overview-main .label { color:#047857; font-size:.8rem; font-weight:800; text-transform:uppercase; letter-spacing:.045em; }
+    .wealth-overview-value { margin-top:7px; font-size:clamp(2rem,4.2vw,3.35rem); line-height:1; font-weight:900; color:#047857; letter-spacing:-.035em; }
+    .wealth-overview-detail { margin-top:9px; color:#475569; font-size:.88rem; line-height:1.45; }
+    .wealth-principal-note { max-width:420px; padding:11px 13px; border:1px solid #bfdbfe; border-radius:12px; background:rgba(239,246,255,.8); color:#1e3a8a; font-size:.8rem; line-height:1.45; }
+    .wealth-overview-grid { display:grid; grid-template-columns:repeat(4,minmax(150px,1fr)); gap:10px; margin-top:17px; }
+    .wealth-mini { padding:12px 13px; border:1px solid rgba(148,163,184,.35); border-radius:12px; background:rgba(255,255,255,.82); }
+    .wealth-mini span { display:block; color:var(--muted); font-size:.73rem; font-weight:800; text-transform:uppercase; letter-spacing:.035em; }
+    .wealth-mini strong { display:block; margin-top:5px; font-size:1.08rem; font-weight:850; }
+    .wealth-mini.asset { border-color:#a7f3d0; background:#f0fdf4; }
+    .wealth-mini.debt { border-color:#fed7aa; background:#fff7ed; }
+    .wealth-mini.net { border-color:#bfdbfe; background:#eff6ff; }
+    .wealth-equation { margin-top:12px; padding-top:11px; border-top:1px dashed #94a3b8; color:#334155; font-size:.82rem; line-height:1.5; }
 
     @media (max-width: 1100px) {
       .monthly-allocation-layout { grid-template-columns:1fr; }
       .cash-balance-layout { grid-template-columns:1fr; }
+      .wealth-overview-grid { grid-template-columns:repeat(2,minmax(150px,1fr)); }
       .debt-deadline-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .planner-protection-box { grid-template-columns:1fr; }
       .planner-protection-title, .planner-protection-note { grid-column:1; }
@@ -337,6 +353,8 @@
       header, main, nav { padding-left: 14px; padding-right: 14px; }
       .cards, form .form-grid { grid-template-columns: 1fr; }
       .cash-balance-entry { grid-template-columns:1fr; }
+      .wealth-overview-grid { grid-template-columns:1fr; }
+      .wealth-overview-value { font-size:2.25rem; }
       .target-box { width: 100%; }
       .target-box input { flex: 1; }
       .card { min-height: auto; }
@@ -406,9 +424,26 @@
           </form>
         </div>
       </div>
+      <div class="panel wealth-overview-panel" id="financialAssetsOverview">
+        <div class="wealth-overview-head">
+          <div class="wealth-overview-main">
+            <div class="label">Financial assets before debt</div>
+            <div class="wealth-overview-value" id="financialAssetsBeforeDebt">$0.00</div>
+            <div class="wealth-overview-detail" id="financialAssetsBeforeDebtDetail">Spendable cash plus projected investments, before subtracting debt.</div>
+          </div>
+          <div class="wealth-principal-note" id="principalFinancialAssets">Principal-only assets will appear here.</div>
+        </div>
+        <div class="wealth-overview-grid">
+          <div class="wealth-mini"><span>Spendable cash</span><strong id="wealthBridgeCash">$0.00</strong></div>
+          <div class="wealth-mini asset"><span>Projected investments</span><strong id="wealthBridgeInvestments">$0.00</strong></div>
+          <div class="wealth-mini debt"><span>Debt at target</span><strong id="wealthBridgeDebt">$0.00</strong></div>
+          <div class="wealth-mini net"><span>After-debt net position</span><strong id="wealthBridgeNet">$0.00</strong></div>
+        </div>
+        <div class="wealth-equation" id="wealthBridgeEquation"></div>
+      </div>
       <div class="grid cards">
         <div class="card">
-          <div class="label">Cash on target date</div>
+          <div class="label">Spendable cash at target</div>
           <div class="value" id="cashTarget">$0</div>
           <div class="detail" id="cashTargetDetail"></div>
         </div>
@@ -430,7 +465,7 @@
         <div class="card">
           <div class="label">Net financial position</div>
           <div class="value" id="netPosition">$0</div>
-          <div class="detail">Liquid cash + projected investments − debt</div>
+          <div class="detail" id="netPositionDetail">Financial assets − debt</div>
         </div>
         <div id="debtBreakdown" class="debt-breakdown" aria-hidden="true">
           <div class="debt-breakdown-inner">
@@ -1766,6 +1801,21 @@
     document.getElementById('quickCashCurrency').value=openingCurrency;
     document.getElementById('quickCashCurrency').dataset.previousCurrency=openingCurrency;
     refreshCashEquivalentLabels();
+    const medianInvestment=Number(s.investmentProjection.endingMedianInvestment)||0;
+    const principalInvestment=Number(s.investmentProjection.endingPrincipalInvestment)||0;
+    const financialAssets=s.cash+medianInvestment;
+    const principalAssets=s.cash+principalInvestment;
+    const netFinancialPosition=financialAssets-s.totalDebt;
+    document.getElementById('financialAssetsBeforeDebt').textContent=money2(financialAssets);
+    document.getElementById('financialAssetsBeforeDebtDetail').textContent=`${money2(s.cash)} spendable cash + ${money2(medianInvestment)} median projected investments. Debt has not been deducted.`;
+    document.getElementById('principalFinancialAssets').innerHTML=`<strong>Principal-only view: ${money2(principalAssets)}</strong><br>${money2(s.cash)} cash + ${money2(principalInvestment)} contributed investment principal, before market growth and before debt.`;
+    document.getElementById('wealthBridgeCash').textContent=money2(s.cash);
+    document.getElementById('wealthBridgeInvestments').textContent=money2(medianInvestment);
+    document.getElementById('wealthBridgeDebt').textContent=money2(s.totalDebt);
+    const bridgeNet=document.getElementById('wealthBridgeNet');
+    bridgeNet.textContent=money2(netFinancialPosition);
+    bridgeNet.className=netFinancialPosition>=0?'positive':'negative';
+    document.getElementById('wealthBridgeEquation').innerHTML=`<strong>${money2(s.cash)} cash + ${money2(medianInvestment)} investments = ${money2(financialAssets)} financial assets before debt.</strong> Subtracting ${money2(s.totalDebt)} of debt produces an after-debt net financial position of ${money2(netFinancialPosition)}.`;
     const cashEl=document.getElementById('cashTarget');
     cashEl.textContent=money(s.cash);
     cashEl.className=`value ${s.cash>=0?'positive':'negative'}`;
@@ -1780,8 +1830,9 @@
     breakdown.classList.toggle('open',debtBreakdownOpen);
     breakdown.setAttribute('aria-hidden',String(!debtBreakdownOpen));
     document.getElementById('debtSummaryToggle').setAttribute('aria-expanded',String(debtBreakdownOpen));
-    const np=s.cash+s.investmentProjection.endingMedianInvestment-s.totalDebt;
+    const np=netFinancialPosition;
     const npEl=document.getElementById('netPosition'); npEl.textContent=money(np); npEl.className=`value ${np>=0?'positive':'negative'}`;
+    document.getElementById('netPositionDetail').textContent=`${money(financialAssets)} financial assets − ${money(s.totalDebt)} debt`;
 
     const minBalance=Math.min(Number(state.settings.startingCash)||0,...s.events.map(e=>e.runningBalance));
     const highApr=s.debtProjections.filter(x=>x.debt.apr>=20).reduce((sum,x)=>sum+x.balanceUSD,0);
@@ -1792,6 +1843,7 @@
       <div class="metric-row"><span>Estimated regular paycheck</span><strong>${money(nextPay)}</strong></div>
       <div class="metric-row"><span>24%–27% debt remaining</span><strong class="warning">${money(highApr)}</strong></div>
       <div class="metric-row"><span>Projected investment value</span><strong class="investment-value">${money(s.investmentProjection.endingMedianInvestment)}</strong></div>
+      <div class="metric-row"><span>Financial assets before debt</span><strong class="positive">${money(financialAssets)}</strong></div>
       <div class="metric-row"><span>Savings target funded</span><strong>${s.savingsProjection.totalTarget>0?Math.round(s.savingsProjection.totalContributed/s.savingsProjection.totalTarget*100):0}%</strong></div>
       <div class="metric-row"><span>CAD conversion assumption</span><strong>C$${Number(state.settings.cadPerUsd).toFixed(4)} / US$1</strong></div>`;
 

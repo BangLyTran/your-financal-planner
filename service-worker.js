@@ -1,4 +1,4 @@
-const CACHE = 'financial-planner-secure-v12-current-cash-currency';
+const CACHE = 'financial-planner-secure-v13-financial-assets-bridge';
 const APP_SHELL = ['./', './index.html', './cloud-config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', event => {
