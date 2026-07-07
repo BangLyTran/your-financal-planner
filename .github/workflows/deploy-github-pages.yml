@@ -55,6 +55,8 @@ jobs:
               'vehicleLoanPaymentNumber:installment+1',
               'vehicleLoanTermMonths:termMonths'
           ]
+          if 'financial-planner-secure-v13-financial-assets-bridge' in Path('service-worker.js').read_text(encoding='utf-8'):
+              required += ['financialAssetsBeforeDebt','wealthBridgeEquation','principalFinancialAssets']
           missing = [item for item in required if item not in html]
           if missing:
               raise SystemExit(f'Missing planner feature markers: {missing}')
@@ -67,7 +69,7 @@ jobs:
           print('Required feature markers are present and static HTML ids are unique.')
           PY
             node --check /tmp/financial-planner.js
-            grep -Eq "financial-planner-secure-v(11-vehicle-loan-term-fix|12-current-cash-currency)" service-worker.js
+            grep -Eq "financial-planner-secure-v(11-vehicle-loan-term-fix|12-current-cash-currency|13-financial-assets-bridge)" service-worker.js
           } > /tmp/validation.log 2>&1
           status=$?
           cat /tmp/validation.log
@@ -128,7 +130,7 @@ jobs:
             echo
             echo "Published URL: $PAGE_URL"
             echo
-            echo 'Validated features include the exact vehicle-loan installment limit and current-cash entry compatibility.'
+            echo 'Validated features include current cash currency entry and the financial-assets-before-debt bridge.'
           } > /tmp/report.md
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/report.md
           gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
