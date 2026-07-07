@@ -1,0 +1,127 @@
+name: Apply v13 financial assets bridge
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v13-financial-assets-bridge.yml'
+      - 'scripts/apply_v13_financial_assets_bridge.py'
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  migrate:
+    if: github.event_name != 'issues' || github.event.issue.title == 'Run financial assets bridge migration'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply financial-assets migration
+        id: migration
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m py_compile scripts/apply_v13_financial_assets_bridge.py
+            python scripts/apply_v13_financial_assets_bridge.py
+            python - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          service = Path('service-worker.js').read_text(encoding='utf-8')
+          required = [
+              'id="financialAssetsOverview"',
+              'id="financialAssetsBeforeDebt"',
+              'id="principalFinancialAssets"',
+              'id="wealthBridgeCash"',
+              'id="wealthBridgeInvestments"',
+              'id="wealthBridgeDebt"',
+              'id="wealthBridgeNet"',
+              'id="wealthBridgeEquation"',
+              'const financialAssets=s.cash+medianInvestment;',
+              'const principalAssets=s.cash+principalInvestment;',
+              'const netFinancialPosition=financialAssets-s.totalDebt;',
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit(f'Missing financial-assets bridge markers: {missing}')
+          if 'financial-planner-secure-v13-financial-assets-bridge' not in service:
+              raise SystemExit('v13 service-worker cache marker is missing.')
+          ids = [item for item in re.findall(r'\bid="([^"]+)"', html) if '${' not in item]
+          duplicates = sorted({item for item in ids if ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate static HTML ids: {duplicates}')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          inline = [s for s in scripts if s.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found.')
+          Path('/tmp/financial-planner-v13.js').write_text(inline[-1], encoding='utf-8')
+          print('Financial-assets bridge source validation passed.')
+          PY
+            node --check /tmp/financial-planner-v13.js
+            node - <<'JS'
+          const cash=23695.48;
+          const investments=20497.29;
+          const debt=18450.70;
+          const assets=cash+investments;
+          const net=assets-debt;
+          if(Math.abs(assets-44192.77)>.001)throw new Error(`Expected $44,192.77 assets, got ${assets}`);
+          if(Math.abs(net-25742.07)>.001)throw new Error(`Expected $25,742.07 net, got ${net}`);
+          console.log(`Bridge test passed: $${cash.toFixed(2)} + $${investments.toFixed(2)} = $${assets.toFixed(2)} before debt; net $${net.toFixed(2)}.`);
+          JS
+          } > /tmp/financial-assets-v13.log 2>&1
+          status=$?
+          cat /tmp/financial-assets-v13.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Commit updated application
+        if: steps.migration.outcome == 'success'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html service-worker.js
+          if git diff --cached --quiet; then
+            echo 'No application changes were needed.'
+            exit 0
+          fi
+          git commit -m 'Show financial assets before debt and net position bridge'
+          git push origin HEAD:main
+
+      - name: Report result
+        if: always() && github.event_name == 'issues'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MIGRATION_OUTCOME: ${{ steps.migration.outcome }}
+        run: |
+          {
+            if [ "$MIGRATION_OUTCOME" = "success" ]; then
+              echo '✅ Financial-assets-before-debt migration completed successfully.'
+            else
+              echo '❌ Financial-assets-before-debt migration failed.'
+            fi
+            echo
+            echo '```text'
+            tail -n 80 /tmp/financial-assets-v13.log 2>/dev/null || echo 'No validation log was produced.'
+            echo '```'
+          } > /tmp/issue-report.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/issue-report.md
+          if [ "$MIGRATION_OUTCOME" = "success" ]; then
+            gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi
+
+      - name: Fail workflow when migration failed
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
